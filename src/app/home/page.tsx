@@ -1,7 +1,11 @@
 export default function Home() {
   return (
     <div className = "">
-      <button>login</button>
+      <button>
+        <a href="/login">
+        login
+        </a>
+        </button>
     </div>
   )
 }
