@@ -9,7 +9,7 @@ function generateRandomString(length: number) {
     .slice(0, length);
 }
 
-export default function Login() {
+export default function login() {
   function redirect_to_spotify() {
     const params = {
       response_type: "code",
@@ -24,7 +24,9 @@ export default function Login() {
   }
   return (
     <div>
-      <button onClick={redirect_to_spotify}>Login with Spotify</button>
+      <button onClick={redirect_to_spotify}>
+        Login with Spotify
+      </button>
     </div>
   );
 }
