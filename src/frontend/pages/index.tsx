@@ -1,4 +1,4 @@
-import redirect_to_spotify from "./api/login";
+import redirect_to_spotify from "../../backend/api/login";
 
 export default function Home() {
   return (
