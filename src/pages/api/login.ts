@@ -12,9 +12,9 @@ function generateRandomString(length: number) {
 
 export default function redirect_to_spotify() {
   const params = {
-    response_type: "code",
+    response_type: 'code',
     client_id: process.env.NEXT_PUBLIC_SPOTIFY_CLIENT_ID,
-    scope: "user-read-private user-read-email",
+    scope: "user-read-private user-read-email user-top-read",
     redirect_uri: "localhost:3000/callback",
     state: generateRandomString(16),
   };
