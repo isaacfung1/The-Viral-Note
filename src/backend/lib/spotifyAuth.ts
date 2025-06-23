@@ -11,17 +11,15 @@ export default async function spotify_auth(req: NextApiRequest, res: NextApiResp
 
 
     if (state === null) {
-        res.redirect('/#' +querystring.stringify({error: 'state_mismatch'}));
+        res.redirect('/?error=state_mismatch');
     }
     else {
         try {
-            const token = await axios.post('/callback', {
-                url: 'https://accounts.spotify.com/api/token',
-                params: {
-                    code: code,
+            const token = await axios.post('https://accounts.spotify.com/api/token'
+                +querystring.stringify({code: code,
                     redirect_uri: 'localhost:3000/callback',
-                    grant_type: 'authorization_code'
-                },
+                    grant_type: 'authorization_code'}),{
+
                 headers: {
                     'Authorization': 'Basic' + (Buffer.from(client_id + ':' + client_secret).toString('base64')),
                     'Content-Type': 'application/x-www-form-urlencoded'
@@ -46,8 +44,12 @@ export default async function spotify_auth(req: NextApiRequest, res: NextApiResp
                     }
                     )
                 ])
+                res.redirect('/');
             }
             catch (error) {
+                console.error(error);
+                return res.redirect('/?error=token_excange_failed');
+                
             }
     }
 
