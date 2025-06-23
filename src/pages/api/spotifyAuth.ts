@@ -15,13 +15,12 @@ export default async function spotify_auth(req: NextApiRequest, res: NextApiResp
     }
     else {
         try {
-            const token = await axios.post('https://accounts.spotify.com/api/token'
-                +querystring.stringify({code: code,
-                    redirect_uri: 'localhost:3000/callback',
-                    grant_type: 'authorization_code'}),{
-
+            const params = querystring.stringify({code: code,
+                redirect_uri: 'https://3eca-74-14-148-168.ngrok-free.app/api/spotifyAuth',
+                grant_type: 'authorization_code'})
+            const token = await axios.post('https://accounts.spotify.com/api/token', params,{
                 headers: {
-                    'Authorization': 'Basic' + (Buffer.from(client_id + ':' + client_secret).toString('base64')),
+                    'Authorization': 'Basic ' + (Buffer.from(client_id + ':' + client_secret).toString('base64')),
                     'Content-Type': 'application/x-www-form-urlencoded'
                 }
 
@@ -48,7 +47,7 @@ export default async function spotify_auth(req: NextApiRequest, res: NextApiResp
             }
             catch (error) {
                 console.error(error);
-                return res.redirect('/?error=token_excange_failed');
+                return res.redirect('/?error=token_exchange_failed');
                 
             }
     }
