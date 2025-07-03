@@ -16,7 +16,7 @@ export default async function spotify_auth(req: NextApiRequest, res: NextApiResp
     else {
         try {
             const params = querystring.stringify({code: code,
-                redirect_uri: 'https://3eca-74-14-148-168.ngrok-free.app/api/spotifyAuth',
+                redirect_uri: 'https://f191-74-14-148-168.ngrok-free.app/api/spotifyAuth',
                 grant_type: 'authorization_code'})
             const token = await axios.post('https://accounts.spotify.com/api/token', params,{
                 headers: {
