@@ -16,13 +16,14 @@ export default async function spotify_auth(req: NextApiRequest, res: NextApiResp
     else {
         try {
             const params = querystring.stringify({code: code,
-                redirect_uri: 'https://f191-74-14-148-168.ngrok-free.app/api/spotifyAuth',
+                redirect_uri: 'https://a35103c42c94.ngrok-free.app/api/spotifyAuth',
                 grant_type: 'authorization_code'})
+
             const token = await axios.post('https://accounts.spotify.com/api/token', params,{
                 headers: {
                     'Authorization': 'Basic ' + (Buffer.from(client_id + ':' + client_secret).toString('base64')),
                     'Content-Type': 'application/x-www-form-urlencoded'
-                }
+                },
 
                 })
                 const {access_token, refresh_token} = token.data;
@@ -30,7 +31,7 @@ export default async function spotify_auth(req: NextApiRequest, res: NextApiResp
                 res.setHeader('Set-Cookie', [
                     serialize('access_token', access_token, {
                         httpOnly: true,
-                        secure: process.env.NODE_ENV === 'production',
+                        secure: true,
                         sameSite: 'strict',
                         path: '/',
                         maxAge: 36000
@@ -43,12 +44,26 @@ export default async function spotify_auth(req: NextApiRequest, res: NextApiResp
                     }
                     )
                 ])
+                try {
+                    const base_url = req.headers.host?.includes('ngrok')
+                        ? `https://${req.headers.host}`
+                        : `http://${req.headers.host}`;
+
+                    await axios.get(`${base_url}/api/users`, {
+                        headers: {
+                            'Authorization': 'Bearer ' + access_token
+                        }
+                    });
+                    console.log('user data successfully stored in db');
+                }
+                catch (user_error) {
+                    console.error('failed to store user data in db:', user_error);
+                }
                 res.redirect('/');
             }
             catch (error) {
                 console.error(error);
                 return res.redirect('/?error=token_exchange_failed');
-                
             }
     }
 
