@@ -35,7 +35,6 @@ export default async function get_artists(req: NextApiRequest, res: NextApiRespo
         popularity: artist.popularity
     }));
 
-
     for (const artist of cleaned_artists_data) {
         const artist_check = await pool.query("SELECT EXISTS (SELECT 1 FROM artists WHERE artist_id = $1)", [artist.id])
         if (artist_check.rows[0].exists) {

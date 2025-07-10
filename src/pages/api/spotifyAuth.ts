@@ -16,7 +16,7 @@ export default async function spotify_auth(req: NextApiRequest, res: NextApiResp
     else {
         try {
             const params = querystring.stringify({code: code,
-                redirect_uri: 'https://a35103c42c94.ngrok-free.app/api/spotifyAuth',
+                redirect_uri: 'https://20f30b51522b.ngrok-free.app/api/spotifyAuth',
                 grant_type: 'authorization_code'})
 
             const token = await axios.post('https://accounts.spotify.com/api/token', params,{
@@ -49,15 +49,22 @@ export default async function spotify_auth(req: NextApiRequest, res: NextApiResp
                         ? `https://${req.headers.host}`
                         : `http://${req.headers.host}`;
 
-                    await axios.get(`${base_url}/api/users`, {
+                    console.log('=== DEBUG: About to call users API ===');
+                    console.log('Base URL:', base_url);
+                    console.log('Access token exists:', !!access_token);
+                    
+                    const user_response = await axios.get(`${base_url}/api/users`, {
                         headers: {
-                            'Authorization': 'Bearer ' + access_token
+                            'Authorization': `Bearer ${access_token}`
                         }
                     });
-                    console.log('user data successfully stored in db');
+                    console.log('=== SUCCESS: User data stored ===');
+                    console.log('Response:', user_response.data);
                 }
-                catch (user_error) {
-                    console.error('failed to store user data in db:', user_error);
+                catch (user_error: any) {
+                    console.log('=== ERROR: Failed to store user data ===');
+                    console.log('Error message:', user_error.message);
+                    console.log('Error response:', user_error.response?.data);
                 }
                 res.redirect('/');
             }
