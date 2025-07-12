@@ -9,14 +9,13 @@ export default async function spotify_auth(req: NextApiRequest, res: NextApiResp
     const client_id = process.env.NEXT_PUBLIC_SPOTIFY_CLIENT_ID;
     const client_secret = process.env.NEXT_PUBLIC_SPOTIFY_CLIENT_SECRET;
 
-
     if (state === null) {
         res.redirect('/?error=state_mismatch');
     }
     else {
         try {
             const params = querystring.stringify({code: code,
-                redirect_uri: 'https://20f30b51522b.ngrok-free.app/api/spotifyAuth',
+                redirect_uri: 'https://84b269caac43.ngrok-free.app/api/spotify-auth',
                 grant_type: 'authorization_code'})
 
             const token = await axios.post('https://accounts.spotify.com/api/token', params,{
@@ -53,20 +52,40 @@ export default async function spotify_auth(req: NextApiRequest, res: NextApiResp
                     console.log('Base URL:', base_url);
                     console.log('Access token exists:', !!access_token);
                     
-                    const user_response = await axios.get(`${base_url}/api/users`, {
+                    const user_response = await axios.get("https://api.spotify.com/v1/me", {
                         headers: {
-                            'Authorization': `Bearer ${access_token}`
+                            "Authorization": "Bearer " + access_token
                         }
                     });
-                    console.log('=== SUCCESS: User data stored ===');
-                    console.log('Response:', user_response.data);
+                    const user_data = user_response.data;
+
+                    console.log('=== DEBUG: User data fetched successfully ===');
+                    const [userResponse, artistResponse] = await Promise.all([
+                        axios.post(`${base_url}/api/get-user`, {
+                            user_data: user_data
+                        }, {
+                            headers: {
+                                Authorization: `Bearer ${access_token}`
+                            }
+                        }),
+                        axios.post(`${base_url}/api/user-artists`, {
+                            user_data: user_data
+                        }, {
+                            headers: {
+                                Authorization: `Bearer ${access_token}`
+                            }
+                        })
+                    ]);
+                    console.log('=== DEBUG: All data stored successfully ===');
+                    console.log('User response:', userResponse.data);
+                    console.log('Artist response:', artistResponse.data);
                 }
                 catch (user_error: any) {
-                    console.log('=== ERROR: Failed to store user data ===');
+                    console.log('=== ERROR: Failed to store data ===');
                     console.log('Error message:', user_error.message);
                     console.log('Error response:', user_error.response?.data);
                 }
-                res.redirect('/');
+                res.redirect('/home');
             }
             catch (error) {
                 console.error(error);
