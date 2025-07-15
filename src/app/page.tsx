@@ -1,6 +1,6 @@
 import redirect_to_spotify from "./api/login";
 
-export default function Home() {
+export default function Main() {
   return (
     <div className = "relative flex flex-row items-center">
       <div className = "flex flex-row justify-center items-center">
@@ -10,9 +10,6 @@ export default function Home() {
         <button onClick={redirect_to_spotify}>
           Login With Spotify
         </button>
-      </div>
-      <div className="bottom-0">
-        Not affiliated with Spotify AB in any way.
       </div>
     </div>
   )
