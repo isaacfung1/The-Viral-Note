@@ -19,8 +19,8 @@ export default async function get_user_artists(req: NextApiRequest, res: NextApi
         if (!access_token && req.headers.authorization) {
             access_token = req.headers.authorization.replace('Bearer ', '');
         }
-
     }
+    
     else {
         const cookies = req.headers.cookie ? parse(req.headers.cookie) : {};
         access_token = cookies.access_token || '';

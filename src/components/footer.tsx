@@ -4,9 +4,6 @@ export default async function Footer() {
             <div className="text-sm">
                 Not affiliated with Spotify AB in any way.
             </div>
-            <div className="text-xs mt-2">
-                © {new Date().getFullYear()} The Viral Note
-            </div>
         </div>
     )
 }

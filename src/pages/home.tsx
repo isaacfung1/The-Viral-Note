@@ -1,10 +1,9 @@
-import react from 'react';
-'use client';
+import React from 'react';
 
 export default function Home() {
     return (
-        <div className = "flex flex-col">
-            <div className = "flex flex-row">
+        <div className = "w-full h-full flex justify-center items-center">
+            <div className = "flex flex-col">
                 <button>
                     Higher
                 </button>
