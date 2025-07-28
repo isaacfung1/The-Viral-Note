@@ -1,4 +1,3 @@
-"use client";
 import querystring from "querystring";
 import crypto from "crypto";
 

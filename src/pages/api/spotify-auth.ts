@@ -74,6 +74,13 @@ export default async function spotify_auth(req: NextApiRequest, res: NextApiResp
                             headers: {
                                 Authorization: `Bearer ${access_token}`
                             }
+                        }),
+                        axios.post(`${base_url}/home`, {
+                            user_data: user_data
+                        }, {
+                            headers: {
+                                Authorization: `Bearer ${access_token}`
+                            }
                         })
                     ]);
                     console.log('=== DEBUG: All data stored successfully ===');
