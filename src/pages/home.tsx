@@ -53,7 +53,7 @@ export default function Home({ artistsData }: HomeProps) {
     const [newPopularity, setNewPopularity] = useState<number>(0);
     
 
-    const availableArtistsRef = useRef<{ [username: string]: number }>({ ...artistsData });
+    const availableArtists = useRef<{ [username: string]: number }>({ ...artistsData });
 
     useEffect(() => {
         const firstArtist = getRandomArtist();
@@ -71,16 +71,16 @@ export default function Home({ artistsData }: HomeProps) {
     }, []);
 
     function getRandomArtist(): Artist | null {
-        const artistsUsernames = Object.keys(availableArtistsRef.current);
+        const artistsUsernames = Object.keys(availableArtists.current);
         if (artistsUsernames.length === 0) {
             console.log("No more artists available");
             return null;
         }
         const randomArtistIndex = Math.floor(Math.random() * artistsUsernames.length);
         const randomArtist = artistsUsernames[randomArtistIndex];
-        const artistPopularity = availableArtistsRef.current[randomArtist];
+        const artistPopularity = availableArtists.current[randomArtist];
         
-        delete availableArtistsRef.current[randomArtist];
+        delete availableArtists.current[randomArtist];
 
         return { username: randomArtist, popularity: artistPopularity };
     }
@@ -89,7 +89,7 @@ export default function Home({ artistsData }: HomeProps) {
         setCurrentUsername(newUsername);
         setCurrentPopularity(newPopularity);
         const nextArtist = getRandomArtist();
-        
+
         if (nextArtist) {
             setNewUsername(nextArtist.username);
             setNewPopularity(nextArtist.popularity);

@@ -8,7 +8,7 @@ function generateRandomString(length: number) {
     .slice(0, length);
 }
 
-export default function redirect_to_spotify() {
+export default function redirectToSpotify() {
   const params = {
     response_type: 'code',
     client_id: process.env.NEXT_PUBLIC_SPOTIFY_CLIENT_ID,

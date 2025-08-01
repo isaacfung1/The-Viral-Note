@@ -1,4 +1,4 @@
-import pool from '../../lib/dbClient';
+import pool from './db-client';
 import { NextApiRequest, NextApiResponse } from 'next';
 
 

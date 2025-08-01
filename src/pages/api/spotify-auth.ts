@@ -3,7 +3,7 @@ import querystring from 'querystring';
 import axios from 'axios';
 import { serialize } from 'cookie'; 
 
-export default async function spotify_auth(req: NextApiRequest, res: NextApiResponse) {
+export default async function spotifyAuth(req: NextApiRequest, res: NextApiResponse) {
     const code = req.query.code || null;
     const state = req.query.state || null;
     const client_id = process.env.NEXT_PUBLIC_SPOTIFY_CLIENT_ID;
@@ -25,17 +25,17 @@ export default async function spotify_auth(req: NextApiRequest, res: NextApiResp
                 },
 
                 })
-                const {access_token, refresh_token} = token.data;
+                const {accessToken, refreshToken} = token.data;
                 
                 res.setHeader('Set-Cookie', [
-                    serialize('access_token', access_token, {
+                    serialize('accessToken', accessToken, {
                         httpOnly: true,
                         secure: true,
                         sameSite: 'strict',
                         path: '/',
                         maxAge: 36000
                     }),
-                    serialize('refresh_token', refresh_token, {
+                    serialize('refreshToken', refreshToken, {
                         httpOnly: true,
                         secure: process.env.NODE_ENV === 'production',
                         sameSite: 'strict',
@@ -49,34 +49,34 @@ export default async function spotify_auth(req: NextApiRequest, res: NextApiResp
 
                     console.log('=== DEBUG: About to call users API ===');
                     console.log('Base URL:', baseUrl);
-                    console.log('Access token exists:', !!access_token);
+                    console.log('Access token exists:', !!accessToken);
                     
                     const user_response = await axios.get("https://api.spotify.com/v1/me", {
                         headers: {
-                            "Authorization": "Bearer " + access_token
+                            "Authorization": "Bearer " + accessToken
                         }
                     });
-                    const user_data = user_response.data;
+                    const userData = user_response.data;
 
                     console.log('=== DEBUG: User data fetched successfully ===');
                     const [userResponse, artistResponse] = await Promise.all([
                         axios.post(`${baseUrl}/api/get-user`, {
-                            user_data: user_data,
-                            access_token: access_token
+                            userData: userData,
+                            accessToken: accessToken
                         }),
                         axios.post(`${baseUrl}/api/user-artists`, {
-                            user_data: user_data,
-                            access_token: access_token
+                            userData: userData,
+                            accessToken: accessToken
                         })
                     ]);
                     console.log('=== DEBUG: All data stored successfully ===');
                     console.log('User response:', userResponse.data);
                     console.log('Artist response:', artistResponse.data);
                 }
-                catch (user_error: any) {
+                catch (userError: any) {
                     console.log('=== ERROR: Failed to store data ===');
-                    console.log('Error message:', user_error.message);
-                    console.log('Error response:', user_error.response?.data);
+                    console.log('Error message:', userError.message);
+                    console.log('Error response:', userError.response?.data);
                 }
                 res.redirect('/home');
             }

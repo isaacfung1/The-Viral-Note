@@ -1,4 +1,4 @@
-import redirect_to_spotify from "../pages/api/login";
+import redirectToSpotify from "../pages/api/login";
 
 export default function Main() {
   return (
@@ -7,7 +7,7 @@ export default function Main() {
         <h1 className = "font-bold text-7xl ">
           The Viral Note
         </h1>
-        <button onClick={redirect_to_spotify}>
+        <button onClick={redirectToSpotify}>
           Login With Spotify
         </button>
       </div>
