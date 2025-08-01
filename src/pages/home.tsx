@@ -1,89 +1,131 @@
 import React from "react";
-import { useState } from "react";
-import pool from "../lib/dbClient";
-import { NextApiRequest } from "next";
+import { useState, useEffect, useRef } from "react";
+import { GetServerSideProps } from "next";
+import axios from "axios";
 
-export default async function Home(req: NextApiRequest) {
-    const user_data = req.body.user_data;
-    const user_id = user_data ? user_data.id : null;
+interface Artist {
+    username: string;
+    popularity: number;
+}
 
-    let artists_id = await pool.query(`
-        SELECT artist_id
-        FROM user_top_artists
-        WHERE user_id = $1 `,
-        [user_id]
-    );
+interface HomeProps {
+    artistsData: { [username: string]: number };
+}
 
-    const available_artists_id = artists_id.rows.map(r => r.artist_id);
+export const getServerSideProps: GetServerSideProps = async (context) => {
+    try {
+        const { req } = context;
+        const cookies = req.headers.cookie || '';
+        
+        const protocol = req.headers.host?.includes('ngrok') ? 'https' : 'http';
+        const baseUrl = `${protocol}://${req.headers.host}`;
+        
+        const userResponse = await axios.get(`${baseUrl}/api/get-user`, {
+            headers: {
+                cookie: cookies
+            }
+        });
+        
+        const artistsResponse = await axios.post(`${baseUrl}/api/api-client`, {
+            userData: userResponse.data
+        });
 
-    let artists_data: { [username: string]: number } = {}; 
-
-    for (const id of available_artists_id) {
-        const data = await pool.query(`
-            SELECT username, popularity
-            FROM artists
-            WHERE artist_id = $1`,
-            [id])
-        artists_data[data.rows[0].username] = data.rows[0].popularity
+        return {
+            props: {
+                artistsData: artistsResponse.data.artistsData || {}
+            }
+        };
+    } 
+    catch (error) {
+        console.error('Error fetching data for home page:', error);
+        return {
+            props: {
+                artistsData: {}
+            }
+        };
     }
+};
 
-    const initial_artist = get_random_artist();
-    const new_artist = get_random_artist();
+export default function Home({ artistsData }: HomeProps) {
+    const [currentUsername, setCurrentUsername] = useState<string>("");
+    const [currentPopularity, setCurrentPopularity] = useState<number>(0);
+    const [newUsername, setNewUsername] = useState<string>("");
+    const [newPopularity, setNewPopularity] = useState<number>(0);
+    
 
-    const [current_username, set_current_username] = useState(initial_artist ? initial_artist.username : "");
-    const [current_popularity, set_current_popularity] = useState(initial_artist ? initial_artist.popularity : 0);
+    const availableArtistsRef = useRef<{ [username: string]: number }>({ ...artistsData });
 
-    const [new_username, set_new_username] = useState(new_artist ? new_artist.username : "");
-    const [new_popularity, set_new_popularity] = useState(new_artist ? new_artist.popularity : 0);
+    useEffect(() => {
+        const firstArtist = getRandomArtist();
+        const secondArtist = getRandomArtist();
+        
+        if (firstArtist) {
+            setCurrentUsername(firstArtist.username);
+            setCurrentPopularity(firstArtist.popularity);
+        }
+        
+        if (secondArtist) {
+            setNewUsername(secondArtist.username);
+            setNewPopularity(secondArtist.popularity);
+        }
+    }, []);
 
-    function get_random_artist() {
-        const artists_username = Object.keys(artists_data);
-        if (artists_username.length === 0) {
+    function getRandomArtist(): Artist | null {
+        const artistsUsernames = Object.keys(availableArtistsRef.current);
+        if (artistsUsernames.length === 0) {
             console.log("No more artists available");
-            // user wins, end game
             return null;
         }
-        const random_artist_index = Math.floor(Math.random() * artists_username.length);
-        const random_artist = artists_username[random_artist_index];
-        const artist_popularity = artists_data[random_artist];
-        delete artists_data[random_artist];
+        const randomArtistIndex = Math.floor(Math.random() * artistsUsernames.length);
+        const randomArtist = artistsUsernames[randomArtistIndex];
+        const artistPopularity = availableArtistsRef.current[randomArtist];
+        
+        delete availableArtistsRef.current[randomArtist];
 
-        return { username: random_artist, popularity: artist_popularity };
+        return { username: randomArtist, popularity: artistPopularity };
     }
 
-    function update_artist() {
-        set_current_username(new_username);
-        set_current_popularity(new_popularity);
-        let new_artist = get_random_artist();
-        if (new_artist) {
-            set_new_username(new_artist.username);
-            set_new_popularity(new_artist.popularity);
-        }
-        else {
-            return null;
+    function updateArtist() {
+        setCurrentUsername(newUsername);
+        setCurrentPopularity(newPopularity);
+        const nextArtist = getRandomArtist();
+        
+        if (nextArtist) {
+            setNewUsername(nextArtist.username);
+            setNewPopularity(nextArtist.popularity);
+        } else {
+            setNewUsername("You Win!");
+            setNewPopularity(0);
         }
     }
 
     function higher() {
-        if (current_popularity <= new_popularity) {
-            update_artist();
+        if (currentPopularity <= newPopularity) {
+            updateArtist();
+        } else {
+            console.log("Wrong! Game Over!");
         }
     }
+    
     function lower() {
-        if (current_popularity >= new_popularity) {
-            update_artist();
+        if (currentPopularity >= newPopularity) {
+            updateArtist();
+        } else {
+            console.log("Wrong! Game Over!");
         }
     }
 
 return (
     <div className="w-screen h-screen flex justify-center items-center">
     <div className="h-screen w-screen flex-1 flex flex-row justify-center items-center">
-        <h1>{current_username}</h1>
+        <h1>{currentUsername}</h1>
     </div>
     <div className="h-screen w-screen flex-1 flex flex-col justify-center items-center gap-10">
-        <button className="">Higher</button>
-        <button>Lower</button>
+        <button onClick={higher} className="">Higher</button>
+        <button onClick={lower}>Lower</button>
     </div>
     </div>
 );
 }
+
+

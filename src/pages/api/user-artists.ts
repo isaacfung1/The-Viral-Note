@@ -13,8 +13,12 @@ export default async function get_user_artists(req: NextApiRequest, res: NextApi
         console.log('=== OPTIMIZED: Using user data from request body ===');
         user_id = req.body.user_data.id;
 
-        const cookies = req.headers.cookie ? parse(req.headers.cookie) : {}
-        access_token = cookies.access_token || '';
+        access_token = req.body.access_token;
+        
+        if (!access_token) {
+            const cookies = req.headers.cookie ? parse(req.headers.cookie) : {}
+            access_token = cookies.access_token || '';
+        }
 
         if (!access_token && req.headers.authorization) {
             access_token = req.headers.authorization.replace('Bearer ', '');

@@ -44,12 +44,11 @@ export default async function spotify_auth(req: NextApiRequest, res: NextApiResp
                     )
                 ])
                 try {
-                    const base_url = req.headers.host?.includes('ngrok')
-                        ? `https://${req.headers.host}`
-                        : `http://${req.headers.host}`;
+                    const protocol = req.headers.host?.includes('ngrok') ? 'https' : 'http';
+                    const baseUrl = `${protocol}://${req.headers.host}`;
 
                     console.log('=== DEBUG: About to call users API ===');
-                    console.log('Base URL:', base_url);
+                    console.log('Base URL:', baseUrl);
                     console.log('Access token exists:', !!access_token);
                     
                     const user_response = await axios.get("https://api.spotify.com/v1/me", {
@@ -61,26 +60,13 @@ export default async function spotify_auth(req: NextApiRequest, res: NextApiResp
 
                     console.log('=== DEBUG: User data fetched successfully ===');
                     const [userResponse, artistResponse] = await Promise.all([
-                        axios.post(`${base_url}/api/get-user`, {
-                            user_data: user_data
-                        }, {
-                            headers: {
-                                Authorization: `Bearer ${access_token}`
-                            }
+                        axios.post(`${baseUrl}/api/get-user`, {
+                            user_data: user_data,
+                            access_token: access_token
                         }),
-                        axios.post(`${base_url}/api/user-artists`, {
-                            user_data: user_data
-                        }, {
-                            headers: {
-                                Authorization: `Bearer ${access_token}`
-                            }
-                        }),
-                        axios.post(`${base_url}/home`, {
-                            user_data: user_data
-                        }, {
-                            headers: {
-                                Authorization: `Bearer ${access_token}`
-                            }
+                        axios.post(`${baseUrl}/api/user-artists`, {
+                            user_data: user_data,
+                            access_token: access_token
                         })
                     ]);
                     console.log('=== DEBUG: All data stored successfully ===');
