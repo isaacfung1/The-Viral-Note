@@ -26,7 +26,7 @@ export const getServerSideProps: GetServerSideProps = async (context) => {
             }
         });
         
-        const artistsResponse = await axios.post(`${baseUrl}/api/api-client`, {
+        const artistsResponse = await axios.post(`${baseUrl}/lib/api-client`, {
             userData: userResponse.data
         });
 
@@ -52,7 +52,6 @@ export default function Home({ artistsData }: HomeProps) {
     const [newUsername, setNewUsername] = useState<string>("");
     const [newPopularity, setNewPopularity] = useState<number>(0);
     
-
     const availableArtists = useRef<{ [username: string]: number }>({ ...artistsData });
 
     useEffect(() => {
@@ -88,12 +87,14 @@ export default function Home({ artistsData }: HomeProps) {
     function updateArtist() {
         setCurrentUsername(newUsername);
         setCurrentPopularity(newPopularity);
+
         const nextArtist = getRandomArtist();
 
         if (nextArtist) {
             setNewUsername(nextArtist.username);
             setNewPopularity(nextArtist.popularity);
-        } else {
+        } 
+        else {
             setNewUsername("You Win!");
             setNewPopularity(0);
         }
@@ -102,7 +103,8 @@ export default function Home({ artistsData }: HomeProps) {
     function higher() {
         if (currentPopularity <= newPopularity) {
             updateArtist();
-        } else {
+        } 
+        else {
             console.log("Wrong! Game Over!");
         }
     }
@@ -110,7 +112,8 @@ export default function Home({ artistsData }: HomeProps) {
     function lower() {
         if (currentPopularity >= newPopularity) {
             updateArtist();
-        } else {
+        } 
+        else {
             console.log("Wrong! Game Over!");
         }
     }

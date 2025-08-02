@@ -13,7 +13,7 @@ export default function redirectToSpotify() {
     response_type: 'code',
     client_id: process.env.NEXT_PUBLIC_SPOTIFY_CLIENT_ID,
     scope: "user-read-private user-read-email user-top-read",
-    redirect_uri: "https://f533764e37eb.ngrok-free.app/api/spotify-auth",
+    redirect_uri: "https://a0852469ab23.ngrok-free.app/api/spotify-auth",
     state: generateRandomString(16),
   };
   const url =

@@ -6,36 +6,37 @@ import { serialize } from 'cookie';
 export default async function spotifyAuth(req: NextApiRequest, res: NextApiResponse) {
     const code = req.query.code || null;
     const state = req.query.state || null;
-    const client_id = process.env.NEXT_PUBLIC_SPOTIFY_CLIENT_ID;
-    const client_secret = process.env.NEXT_PUBLIC_SPOTIFY_CLIENT_SECRET;
+    const clientId = process.env.NEXT_PUBLIC_SPOTIFY_CLIENT_ID;
+    const clientSecret = process.env.NEXT_PUBLIC_SPOTIFY_CLIENT_SECRET;
 
     if (state === null) {
-        res.redirect('/?error=state_mismatch');
+        res.redirect('/?error=stateMismatch');
     }
     else {
         try {
             const params = querystring.stringify({code: code,
-                redirect_uri: 'https://f533764e37eb.ngrok-free.app/app/api/spotify-auth',
+                redirect_uri: 'https://a0852469ab23.ngrok-free.app/api/spotify-auth',
                 grant_type: 'authorization_code'})
 
             const token = await axios.post('https://accounts.spotify.com/api/token', params,{
                 headers: {
-                    'Authorization': 'Basic ' + (Buffer.from(client_id + ':' + client_secret).toString('base64')),
+                    'Authorization': 'Basic ' + (Buffer.from(clientId + ':' + clientSecret).toString('base64')),
                     'Content-Type': 'application/x-www-form-urlencoded'
                 },
 
                 })
-                const {accessToken, refreshToken} = token.data;
+
+                const {access_token, refresh_token} = token.data;
                 
                 res.setHeader('Set-Cookie', [
-                    serialize('accessToken', accessToken, {
+                    serialize('access_token', access_token, {
                         httpOnly: true,
                         secure: true,
                         sameSite: 'strict',
                         path: '/',
                         maxAge: 36000
                     }),
-                    serialize('refreshToken', refreshToken, {
+                    serialize('refresh_token', refresh_token, {
                         httpOnly: true,
                         secure: process.env.NODE_ENV === 'production',
                         sameSite: 'strict',
@@ -49,24 +50,24 @@ export default async function spotifyAuth(req: NextApiRequest, res: NextApiRespo
 
                     console.log('=== DEBUG: About to call users API ===');
                     console.log('Base URL:', baseUrl);
-                    console.log('Access token exists:', !!accessToken);
+                    console.log('Access token exists:', !!access_token);
                     
-                    const user_response = await axios.get("https://api.spotify.com/v1/me", {
+                    const spotifyUserResponse = await axios.get("https://api.spotify.com/v1/me", {
                         headers: {
-                            "Authorization": "Bearer " + accessToken
+                            "Authorization": "Bearer " + access_token
                         }
                     });
-                    const userData = user_response.data;
+                    const userData = spotifyUserResponse.data;
 
                     console.log('=== DEBUG: User data fetched successfully ===');
                     const [userResponse, artistResponse] = await Promise.all([
                         axios.post(`${baseUrl}/api/get-user`, {
                             userData: userData,
-                            accessToken: accessToken
+                            access_token: access_token
                         }),
                         axios.post(`${baseUrl}/api/user-artists`, {
                             userData: userData,
-                            accessToken: accessToken
+                            access_token: access_token
                         })
                     ]);
                     console.log('=== DEBUG: All data stored successfully ===');
@@ -82,7 +83,7 @@ export default async function spotifyAuth(req: NextApiRequest, res: NextApiRespo
             }
             catch (error) {
                 console.error(error);
-                return res.redirect('/?error=token_exchange_failed');
+                return res.redirect('/?error=tokenExchangeFailed');
             }
     }
 

@@ -7,44 +7,44 @@ export default async function getUserArtists(req: NextApiRequest, res: NextApiRe
     console.log('=== DEBUG: Artists API called ===');
     
     let userId: string;
-    let accessToken: string;
+    let access_token: string;
 
     if (req.body && req.body.userData) {
         console.log('=== OPTIMIZED: Using user data from request body ===');
         userId = req.body.userData.id;
 
-        accessToken = req.body.accessToken;
+        access_token = req.body.access_token;
         
-        if (!accessToken) {
+        if (!access_token) {
             const cookies = req.headers.cookie ? parse(req.headers.cookie) : {}
-            accessToken = cookies.accessToken || '';
+            access_token = cookies.access_token || '';
         }
 
-        if (!accessToken && req.headers.authorization) {
-            accessToken = req.headers.authorization.replace('Bearer ', '');
+        if (!access_token && req.headers.authorization) {
+            access_token = req.headers.authorization.replace('Bearer ', '');
         }
     }
     
     else {
         const cookies = req.headers.cookie ? parse(req.headers.cookie) : {};
-        accessToken = cookies.accessToken || '';
+        access_token = cookies.access_token || '';
 
-        if (!accessToken && req.headers.authorization){
-            accessToken = req.headers.authorization.replace('Bearer ', '')
+        if (!access_token && req.headers.authorization){
+            access_token = req.headers.authorization.replace('Bearer ', '')
         }
 
-        console.log('Access token from cookies:', !!cookies.accessToken);
+        console.log('Access token from cookies:', !!cookies.access_token);
         console.log('Access token from headers:', !!req.headers.authorization);
-        console.log('Final access token exists:', !!accessToken);
+        console.log('Final access token exists:', !!access_token);
 
-            if (!accessToken) {
+            if (!access_token) {
                 console.log('ERROR: No access token found');
                 return res.status(401).json({error: "no token found"})
             }
     
         const userResponse = await axios.get("https://api.spotify.com/v1/me", {
             headers: {
-                Authorization: "Bearer " + accessToken
+                Authorization: "Bearer " + access_token
             }
         });
         const userData = userResponse.data;
@@ -58,7 +58,7 @@ export default async function getUserArtists(req: NextApiRequest, res: NextApiRe
                 offset: 0
             },
             headers: {
-                'Authorization': 'Bearer ' + accessToken
+                'Authorization': 'Bearer ' + access_token
             }
         })  
 

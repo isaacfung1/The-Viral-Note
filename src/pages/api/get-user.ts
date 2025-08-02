@@ -8,7 +8,7 @@ export default async function getUser(req: NextApiRequest, res: NextApiResponse)
 
     if (req.body && req.body.userData) {
         console.log('=== OPTIMIZED: Using user data from request body ===');
-        const userData = req.body.user_data;
+        const userData = req.body.userData;
         
         const userId = userData.id;
         const username = userData.display_name;
@@ -38,24 +38,24 @@ export default async function getUser(req: NextApiRequest, res: NextApiResponse)
     }
     
     const cookies = req.headers.cookie ? parse(req.headers.cookie) : {};
-    let accessToken = cookies.accessToken;
+    let access_token = cookies.access_token;
 
-    if (!accessToken && req.headers.authorization){
-        accessToken = req.headers.authorization.replace('Bearer ', '')
+    if (!access_token && req.headers.authorization){
+        access_token = req.headers.authorization.replace('Bearer ', '')
     }
 
-    console.log('Access token from cookies:', !!cookies.accessToken);
+    console.log('Access token from cookies:', !!cookies.access_token);
     console.log('Access token from headers:', !!req.headers.authorization);
-    console.log('Final access token exists:', !!accessToken);
+    console.log('Final access token exists:', !!access_token);
 
-    if (!accessToken) {
+    if (!access_token) {
         console.log('ERROR: No access token found');
         return res.status(401).json({error: "no token found"})
     }
     try {
         const userResponse = await axios.get("https://api.spotify.com/v1/me", {
             headers: {
-                "Authorization": "Bearer " + accessToken
+                "Authorization": "Bearer " + access_token
             }
         });
 
