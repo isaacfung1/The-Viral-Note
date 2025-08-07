@@ -78,7 +78,9 @@ export default async function getUser(req: NextApiRequest, res: NextApiResponse)
                 [userId, username, imageUrl]
             );
             console.log("=== SUCCESS: User inserted into DB ===");
-            res.status(200).json({message: "successful db insert"});
+            res.status(200).json({message: "successful db insert",
+                user: {userId}
+            });
         } 
         catch (dbError: any) {
             console.log("=== ERROR: Database insertion failed ===");
