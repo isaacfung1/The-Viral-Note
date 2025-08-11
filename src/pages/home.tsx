@@ -2,7 +2,6 @@ import React from "react";
 import { useState, useEffect, useRef } from "react";
 import { GetServerSideProps } from "next";
 import axios from "axios";
-import Image from "next/image";
 
 interface Artist {
   username: string;
@@ -78,6 +77,8 @@ export default function Home({ artistsData }: HomeProps) {
   const [userScore, setUserScore] = useState<number>(0);
   const [gameOver, setGameOver] = useState<boolean>(false);
   const [gameWon, setGameWon] = useState<boolean>(false);
+  const [showNextArtistScore, setShowNextArtistScore] = useState<boolean>(false);
+  const [isTransitioning, setIsTransitioning] = useState<boolean>(false);
 
   const availableArtists = useRef<
     Array<{ username: string; popularity: number; image_url: string }>
@@ -121,6 +122,7 @@ export default function Home({ artistsData }: HomeProps) {
     if (newArtist) {
       setCurrentArtist(nextArtist);
       setNextArtist(newArtist);
+      setShowNextArtistScore(false);
     } else {
       gameEnd();
     }
@@ -151,20 +153,19 @@ export default function Home({ artistsData }: HomeProps) {
   }
   function gameEnd() {
     setGameOver(true);
-    // Check if the user won (no more artists available)
     if (availableArtists.current.length === 0) {
       setGameWon(true);
     }
   }
 
   function resetGame() {
-    // Reset all game state
     availableArtists.current = [...artistsData];
     setUserScore(0);
     setGameOver(false);
     setGameWon(false);
+    setShowNextArtistScore(false);
+    setIsTransitioning(false);
     
-    // Get new artists
     const firstArtist = getRandomArtist();
     const secondArtist = getRandomArtist();
     
@@ -173,17 +174,21 @@ export default function Home({ artistsData }: HomeProps) {
   }
 
   function quitGame() {
-    // Redirect to home page or show login screen
     window.location.href = '/';
   }
 
   return (
     <div className="w-screen h-screen bg-gray-950 flex justify-center items-center relative">
-      {/* Score Display */}
-      <div className="absolute top-6 right-6 bg-gray-900 rounded-xl p-4 border border-gray-700">
-        <p className="text-gray-300 text-sm">Score</p>
-        <p className="text-2xl font-bold text-green-400">{userScore}</p>
-      </div>
+
+        <div className="absolute left-1/2 top-10 h-60 w-0.5 bg-gray-700 transform -translate-x-1/2"></div>
+        <div className="absolute left-1/2 bottom-10 h-60 w-0.5 bg-gray-700 transform -translate-x-1/2"></div>
+        {/* VS Text in the middle */}
+        <div className="absolute left-1/2 top-1/2 transform -translate-x-1/2 -translate-y-1/2 z-10">
+            <h2 className="text-white text-2xl font-bold bg-gray-900 px-4 py-2 rounded-full border border-gray-700">
+                VS
+            </h2>
+        </div>
+
 
       <div className="h-screen w-screen flex-1 flex flex-col justify-center items-center">
         <div className="text-center">
@@ -216,6 +221,26 @@ export default function Home({ artistsData }: HomeProps) {
         </div>
       </div>
       <div className="h-screen w-screen flex-1 flex flex-col justify-center items-center">
+        <div className="text-gray-200 text-3xl mb-4">
+            <button 
+                onClick={() => {
+                    setShowNextArtistScore(true);
+                    setIsTransitioning(true);
+                    setTimeout(() => {
+                        higher();
+                        setIsTransitioning(false);
+                    }, 1500);
+                }}
+                className={`transition-colors ${
+                    isTransitioning 
+                        ? 'text-gray-500 cursor-not-allowed' 
+                        : 'hover:text-green-400 cursor-pointer'
+                }`}
+                disabled={isTransitioning}
+            >
+                ▲
+            </button>
+        </div>
         <div className="text-center">
           {nextArtist && (
             <div className="mb-4">
@@ -240,24 +265,30 @@ export default function Home({ artistsData }: HomeProps) {
           <h1 className="text-2xl font-bold text-white">
             {nextArtist?.username || "Loading..."}
           </h1>
-          {/* <h1 className="text-xl text-gray-200">
-            Popularity Score: {nextArtist?.popularity || "Loading..."}
-          </h1> */}
+          <h1 className="text-xl text-gray-400">
+            Popularity Score: {showNextArtistScore ? nextArtist?.popularity : "???"}
+          </h1>
         </div>
-        <div className="flex flex-col gap-10 mt-8">
-          <button
-            onClick={higher}
-            className="bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-6 rounded-lg transition-colors"
-          >
-            Higher
-          </button>
-          <button
-            onClick={lower}
-            className="bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-6 rounded-lg transition-colors"
-          >
-            Lower
-          </button>
-        </div>
+            <div className="text-3xl text-gray-200 mt-2">
+             <button 
+                 onClick={() => {
+                     setShowNextArtistScore(true);
+                     setIsTransitioning(true);
+                     setTimeout(() => {
+                         lower();
+                         setIsTransitioning(false);
+                     }, 1500);
+                 }}
+                 className={`transition-colors ${
+                     isTransitioning 
+                         ? 'text-gray-500 cursor-not-allowed' 
+                         : 'hover:text-red-400 cursor-pointer'
+                 }`}
+                 disabled={isTransitioning}
+             >
+                 ▼
+             </button>
+         </div>
       </div>
 
       {/* Game Over Modal Overlay */}
