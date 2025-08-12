@@ -11,7 +11,12 @@ export default {
       colors: {
         background: "var(--background)",
         foreground: "var(--foreground)",
+        spotifyGreen: "#1cd95d",
+        spotifyGray: "#121212"
       },
+      fontFamily: {
+        gotham: "Gotham Medium, sans-serif",
+      }
     },
   },
   plugins: [],
