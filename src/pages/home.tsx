@@ -2,6 +2,7 @@ import React from "react";
 import { useState, useEffect, useRef } from "react";
 import { GetServerSideProps } from "next";
 import axios from "axios";
+import NumberFlow from "@number-flow/react";
 
 interface Artist {
   username: string;
@@ -77,8 +78,7 @@ export default function Home({ artistsData }: HomeProps) {
   const [userScore, setUserScore] = useState<number>(0);
   const [gameOver, setGameOver] = useState<boolean>(false);
   const [gameWon, setGameWon] = useState<boolean>(false);
-  const [showNextArtistScore, setShowNextArtistScore] = useState<boolean>(false);
-  const [isTransitioning, setIsTransitioning] = useState<boolean>(false);
+  const [showScore, setShowScore] = useState<boolean>(false);
 
   const availableArtists = useRef<
     Array<{ username: string; popularity: number; image_url: string }>
@@ -122,35 +122,37 @@ export default function Home({ artistsData }: HomeProps) {
     if (newArtist) {
       setCurrentArtist(nextArtist);
       setNextArtist(newArtist);
-      setShowNextArtistScore(false);
+      setShowScore(false);
     } else {
       gameEnd();
     }
   }
 
-  function higher() {
-    if (!currentArtist || !nextArtist) {
-      return;
-    }
-    if (currentArtist.popularity <= nextArtist.popularity) {
-      setUserScore(userScore + 1);
-      updateArtist();
+  const ANIMATION_DURATION = 1500;
+
+  async function handleGuess(isHigher: boolean) {
+    if (!nextArtist) return;
+
+    const correct = isHigher
+      ? currentArtist && nextArtist.popularity >= currentArtist.popularity
+      : currentArtist
+      ? nextArtist.popularity <= currentArtist.popularity
+      : false;
+
+    if (correct) {
+      setUserScore((prev) => prev + 1);
     } else {
       gameEnd();
+      return;
     }
+
+    setShowScore(true);
+
+    await new Promise((resolve) => setTimeout(resolve, ANIMATION_DURATION));
+    updateArtist();
+    setShowScore(false);
   }
 
-  function lower() {
-    if (!currentArtist || !nextArtist) {
-      return;
-    }
-    if (currentArtist.popularity >= nextArtist.popularity) {
-      setUserScore(userScore + 1);
-      updateArtist();
-    } else {
-      gameEnd();
-    }
-  }
   function gameEnd() {
     setGameOver(true);
     if (availableArtists.current.length === 0) {
@@ -163,32 +165,29 @@ export default function Home({ artistsData }: HomeProps) {
     setUserScore(0);
     setGameOver(false);
     setGameWon(false);
-    setShowNextArtistScore(false);
-    setIsTransitioning(false);
-    
+    setShowScore(false);
+
     const firstArtist = getRandomArtist();
     const secondArtist = getRandomArtist();
-    
+
     if (firstArtist) setCurrentArtist(firstArtist);
     if (secondArtist) setNextArtist(secondArtist);
   }
 
   function quitGame() {
-    window.location.href = '/';
+    window.location.href = "/";
   }
 
   return (
     <div className="w-screen h-screen bg-gray-950 flex justify-center items-center relative">
-
-        <div className="absolute left-1/2 top-10 h-60 w-0.5 bg-gray-700 transform -translate-x-1/2"></div>
-        <div className="absolute left-1/2 bottom-10 h-60 w-0.5 bg-gray-700 transform -translate-x-1/2"></div>
-        {/* VS Text in the middle */}
-        <div className="absolute left-1/2 top-1/2 transform -translate-x-1/2 -translate-y-1/2 z-10">
-            <h2 className="text-white text-2xl font-bold bg-gray-900 px-4 py-2 rounded-full border border-gray-700">
-                VS
-            </h2>
-        </div>
-
+      <div className="absolute left-1/2 top-10 h-60 w-0.5 bg-gray-700 transform -translate-x-1/2"></div>
+      <div className="absolute left-1/2 bottom-10 h-60 w-0.5 bg-gray-700 transform -translate-x-1/2"></div>
+      {/* VS Text in the middle */}
+      <div className="absolute left-1/2 top-1/2 transform -translate-x-1/2 -translate-y-1/2 z-10">
+        <h2 className="text-white text-2xl font-bold bg-gray-900 px-4 py-2 rounded-full border border-gray-700">
+          VS
+        </h2>
+      </div>
 
       <div className="h-screen w-screen flex-1 flex flex-col justify-center items-center">
         <div className="text-center">
@@ -222,24 +221,18 @@ export default function Home({ artistsData }: HomeProps) {
       </div>
       <div className="h-screen w-screen flex-1 flex flex-col justify-center items-center">
         <div className="text-gray-200 text-3xl mb-4">
-            <button 
-                onClick={() => {
-                    setShowNextArtistScore(true);
-                    setIsTransitioning(true);
-                    setTimeout(() => {
-                        higher();
-                        setIsTransitioning(false);
-                    }, 1500);
-                }}
-                className={`transition-colors ${
-                    isTransitioning 
-                        ? 'text-gray-500 cursor-not-allowed' 
-                        : 'hover:text-green-400 cursor-pointer'
-                }`}
-                disabled={isTransitioning}
-            >
-                ▲
-            </button>
+          <button
+            onClick={() => {
+              handleGuess(true);
+            }}
+            className={`transition-colors ${
+              showScore
+                ? "text-gray-500 cursor-not-allowed"
+                : "hover:text-green-400 cursor-pointer"
+            }`}
+          >
+            ▲
+          </button>
         </div>
         <div className="text-center">
           {nextArtist && (
@@ -265,30 +258,31 @@ export default function Home({ artistsData }: HomeProps) {
           <h1 className="text-2xl font-bold text-white">
             {nextArtist?.username || "Loading..."}
           </h1>
-          <h1 className="text-xl text-gray-400">
-            Popularity Score: {showNextArtistScore ? nextArtist?.popularity : "???"}
-          </h1>
+          <NumberFlow
+            className="text-xl text-gray-200"
+            value={showScore ? nextArtist?.popularity : null}
+            prefix={`Popularity Score: ${showScore ? "" : "?"}`}
+            trend={0}
+            format={{ notation: "compact" }}
+            spinTiming={{ duration: ANIMATION_DURATION, easing: "ease-out" }}
+            plugins={["continuous"]}
+          />
+
         </div>
-            <div className="text-3xl text-gray-200 mt-2">
-             <button 
-                 onClick={() => {
-                     setShowNextArtistScore(true);
-                     setIsTransitioning(true);
-                     setTimeout(() => {
-                         lower();
-                         setIsTransitioning(false);
-                     }, 1500);
-                 }}
-                 className={`transition-colors ${
-                     isTransitioning 
-                         ? 'text-gray-500 cursor-not-allowed' 
-                         : 'hover:text-red-400 cursor-pointer'
-                 }`}
-                 disabled={isTransitioning}
-             >
-                 ▼
-             </button>
-         </div>
+        <div className="text-3xl text-gray-200 mt-2">
+          <button
+            onClick={() => {
+              handleGuess(false);
+            }}
+            className={`transition-colors ${
+              showScore
+                ? "text-gray-500 cursor-not-allowed"
+                : "hover:text-red-400 cursor-pointer"
+            }`}
+          >
+            ▼
+          </button>
+        </div>
       </div>
 
       {/* Game Over Modal Overlay */}
@@ -296,7 +290,7 @@ export default function Home({ artistsData }: HomeProps) {
         <>
           {/* Dark Overlay */}
           <div className="absolute inset-0 bg-black bg-opacity-50"></div>
-          
+
           {/* Modal Content */}
           <div className="absolute inset-0 flex justify-center items-center z-10">
             <div className="bg-gray-900 rounded-3xl p-12 max-w-md w-full mx-4 shadow-2xl border border-gray-700">
@@ -318,12 +312,13 @@ export default function Home({ artistsData }: HomeProps) {
                 {/* Score Display */}
                 <div className="mb-8">
                   <p className="text-gray-300 text-lg mb-2">Final Score</p>
-                  <p className="text-5xl font-bold text-green-400">{userScore}</p>
+                  <p className="text-5xl font-bold text-green-400">
+                    {userScore}
+                  </p>
                   <p className="text-gray-400 text-sm mt-2">
-                    {gameWon 
-                      ? "You guessed all artists correctly!" 
-                      : "Better luck next time!"
-                    }
+                    {gameWon
+                      ? "You guessed all artists correctly!"
+                      : "Better luck next time!"}
                   </p>
                 </div>
 
@@ -349,6 +344,4 @@ export default function Home({ artistsData }: HomeProps) {
       )}
     </div>
   );
-
-
 }
