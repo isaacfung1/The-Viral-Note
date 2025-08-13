@@ -3,6 +3,7 @@ import { useState, useEffect, useRef } from "react";
 import { GetServerSideProps } from "next";
 import axios from "axios";
 import NumberFlow from "@number-flow/react";
+import ModalOverlay from "../components/modal-overlay";
 
 interface Artist {
   username: string;
@@ -10,7 +11,7 @@ interface Artist {
   imageUrl: string;
 }
 
-interface HomeProps {
+interface UserArtistsProps {
   artistsData: Array<{
     username: string;
     popularity: number;
@@ -72,7 +73,7 @@ export const getServerSideProps: GetServerSideProps = async (context) => {
   }
 };
 
-export default function Home({ artistsData }: HomeProps) {
+export default function Home({ artistsData }: UserArtistsProps) {
   const [currentArtist, setCurrentArtist] = useState<Artist | null>(null);
   const [nextArtist, setNextArtist] = useState<Artist | null>(null);
   const [userScore, setUserScore] = useState<number>(0);
@@ -82,9 +83,11 @@ export default function Home({ artistsData }: HomeProps) {
 
   const availableArtists = useRef<
     Array<{ username: string; popularity: number; image_url: string }>
-  >([...artistsData]);
+  >([]);
 
   useEffect(() => {
+    availableArtists.current = [...artistsData];
+    
     const firstArtist = getRandomArtist();
     const secondArtist = getRandomArtist();
 
@@ -95,18 +98,16 @@ export default function Home({ artistsData }: HomeProps) {
     if (secondArtist) {
       setNextArtist(secondArtist);
     }
-  }, []);
+  }, [artistsData]);
 
   function getRandomArtist(): Artist | null {
     if (availableArtists.current.length === 0) {
       gameEnd();
       return null;
     }
-    const randomArtistIndex = Math.floor(
-      Math.random() * availableArtists.current.length
-    );
+    
+    const randomArtistIndex = Math.floor(Math.random() * availableArtists.current.length);
     const randomArtist = availableArtists.current[randomArtistIndex];
-
     availableArtists.current.splice(randomArtistIndex, 1);
 
     return {
@@ -179,12 +180,11 @@ export default function Home({ artistsData }: HomeProps) {
   }
 
   return (
-    <div className="w-screen h-screen bg-gray-950 flex justify-center items-center relative">
+    <div className="w-screen h-screen bg-black flex justify-center items-center relative">
       <div className="absolute left-1/2 top-10 h-60 w-0.5 bg-gray-700 transform -translate-x-1/2"></div>
       <div className="absolute left-1/2 bottom-10 h-60 w-0.5 bg-gray-700 transform -translate-x-1/2"></div>
-      {/* VS Text in the middle */}
       <div className="absolute left-1/2 top-1/2 transform -translate-x-1/2 -translate-y-1/2 z-10">
-        <h2 className="text-white text-2xl font-bold bg-gray-900 px-4 py-2 rounded-full border border-gray-700">
+        <h2 className="text-white text-2xl font-bold bg-spotifyGray px-4 py-2 rounded-full border border-gray-700">
           VS
         </h2>
       </div>
@@ -203,7 +203,6 @@ export default function Home({ artistsData }: HomeProps) {
                 alt={currentArtist.username}
                 className="w-52 h-52 rounded-full object-cover border-4 border-green-500 shadow-lg mx-auto"
                 onError={(e) => {
-                  // Fallback to UI Avatars if the image fails to load
                   e.currentTarget.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(
                     currentArtist.username
                   )}&background=10b981&color=fff&size=200&rounded=true`;
@@ -228,7 +227,7 @@ export default function Home({ artistsData }: HomeProps) {
             className={`transition-colors ${
               showScore
                 ? "text-gray-500 cursor-not-allowed"
-                : "hover:text-green-400 cursor-pointer"
+                : "hover:text-green-400 cursor-pointer hover:scale-105"
             }`}
           >
             ▲
@@ -247,7 +246,6 @@ export default function Home({ artistsData }: HomeProps) {
                 alt={nextArtist.username}
                 className="w-52 h-52 rounded-full object-cover border-4 border-gray-600 shadow-lg mx-auto"
                 onError={(e) => {
-                  // Fallback to UI Avatars if the image fails to load
                   e.currentTarget.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(
                     nextArtist.username
                   )}&background=10b981&color=fff&size=200&rounded=true`;
@@ -260,7 +258,7 @@ export default function Home({ artistsData }: HomeProps) {
           </h1>
           <NumberFlow
             className="text-xl text-gray-200"
-            value={showScore ? nextArtist?.popularity  : ''}
+            value={showScore ? (nextArtist?.popularity || 0) : 0}
             prefix={`Popularity Score: `}
             trend={0}
             format={{ notation: "compact" }}
@@ -277,70 +275,20 @@ export default function Home({ artistsData }: HomeProps) {
             className={`transition-colors ${
               showScore
                 ? "text-gray-500 cursor-not-allowed"
-                : "hover:text-red-400 cursor-pointer"
+                : "hover:text-red-400 cursor-pointer hover:scale-105"
             }`}
           >
             ▼
           </button>
         </div>
       </div>
-
-      {/* Game Over Modal Overlay */}
       {gameOver && (
-        <>
-          {/* Dark Overlay */}
-          <div className="absolute inset-0 bg-black bg-opacity-50"></div>
-
-          {/* Modal Content */}
-          <div className="absolute inset-0 flex justify-center items-center z-10">
-            <div className="bg-gray-900 rounded-3xl p-12 max-w-md w-full mx-4 shadow-2xl border border-gray-700">
-              <div className="text-center">
-                {/* Game Result Icon */}
-                <div className="mb-6">
-                  {gameWon ? (
-                    <div className="text-6xl mb-4">🎉</div>
-                  ) : (
-                    <div className="text-6xl mb-4">💀</div>
-                  )}
-                </div>
-
-                {/* Game Result Title */}
-                <h1 className="text-4xl font-bold text-white mb-4">
-                  {gameWon ? "You Won!" : "Game Over"}
-                </h1>
-
-                {/* Score Display */}
-                <div className="mb-8">
-                  <p className="text-gray-300 text-lg mb-2">Final Score</p>
-                  <p className="text-5xl font-bold text-green-400">
-                    {userScore}
-                  </p>
-                  <p className="text-gray-400 text-sm mt-2">
-                    {gameWon
-                      ? "You guessed all artists correctly!"
-                      : "Better luck next time!"}
-                  </p>
-                </div>
-
-                {/* Action Buttons */}
-                <div className="space-y-4">
-                  <button
-                    onClick={resetGame}
-                    className="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-4 px-8 rounded-xl transition-all duration-200 transform hover:scale-105 shadow-lg text-lg"
-                  >
-                    Play Again
-                  </button>
-                  <button
-                    onClick={quitGame}
-                    className="w-full bg-gray-700 hover:bg-gray-600 text-white font-bold py-4 px-8 rounded-xl transition-all duration-200 transform hover:scale-105 shadow-lg text-lg"
-                  >
-                    Quit Game
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-        </>
+        <ModalOverlay
+          gameWon={gameWon}
+          userScore={userScore}
+          resetGame={resetGame}
+          quitGame={quitGame}
+        />
       )}
     </div>
   );

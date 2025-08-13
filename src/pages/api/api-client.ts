@@ -16,15 +16,15 @@ export default async function getArtistData(req: NextApiRequest, res: NextApiRes
         }
 
         console.log('=== Querying user_top_artists ===');
+        
         const artistsId = await pool.query(`
             SELECT artist_id
             FROM user_top_artists
-            WHERE user_id = $1`,
+            WHERE user_id = $1
+            GROUP BY artist_id`,
             [userId]
         );
-
         const availableArtistsId = artistsId.rows.map(r => r.artist_id);
-
         let artistsData: Array<{username: string, popularity: number, image_url: string}> = []; 
 
         console.log('=== Querying artists data ===');

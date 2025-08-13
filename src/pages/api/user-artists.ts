@@ -100,7 +100,9 @@ export default async function getUserArtists(req: NextApiRequest, res: NextApiRe
 
 
                 await pool.query(`INSERT INTO user_top_artists (user_id, artist_id) 
-                    VALUES ($1, $2)`, [userId, artist.id]);
+                    VALUES ($1, $2)
+                    ON CONFLICT (user_id, artist_id) 
+                    DO NOTHING`, [userId, artist.id]);
             }
             console.log("=== SUCCESS: Artists inserted into DB ===");
             res.status(200).json({message: "successful db insert"});
