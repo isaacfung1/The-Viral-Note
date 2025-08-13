@@ -3,6 +3,7 @@ import { MouseEventHandler, ReactNode } from "react";
 export default function GamemodeButton(inputProps: {
     children: React.ReactNode;
     onClick?: MouseEventHandler<HTMLButtonElement>
+    onMouseEnter?: MouseEventHandler<HTMLButtonElement>
 }) {
     const props = {...inputProps}
   return (
