@@ -21,11 +21,8 @@ interface UserArtistsProps {
 
 export const getServerSideProps: GetServerSideProps = async (context) => {
   try {
-    console.log("=== DEBUG: getServerSideProps starting ===");
     const { req } = context;
     const cookies = req.headers.cookie || "";
-
-    console.log("Cookies:", cookies);
 
     const protocol = req.headers.host?.includes("ngrok") ? "https" : "http";
     const baseUrl = `${protocol}://${req.headers.host}`;
