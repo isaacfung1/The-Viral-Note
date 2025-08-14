@@ -1,41 +1,99 @@
 import redirectToSpotify from "../pages/api/login";
 import VideoBackground from "@/components/video-bg";
 import Image from "next/image";
+import { GetServerSideProps } from "next";
+import axios from "axios";
 
-export default function Main() {
+interface HomeProps {
+  isAuthenticated: boolean;
+  user?: any;
+}
+
+export const getServerSideProps: GetServerSideProps = async (context) => {
+  try {
+    const { req } = context;
+    const cookies = req.headers.cookie || "";
+
+    const protocol = req.headers.host?.includes("ngrok") ? "https" : "http";
+    const baseUrl = `${protocol}://${req.headers.host}`;
+
+    const userResponse = await axios.get(`${baseUrl}/api/get-user`, {
+      headers: {
+        cookie: cookies,
+      },
+    });
+
+    const isAuthenticated = !!(
+      userResponse.data.user && userResponse.data.user.userId
+    );
+
+    return {
+      props: {
+        isAuthenticated,
+        user: userResponse.data.user || null,
+      },
+    };
+  } catch (error) {
+    console.error("Error checking user authentication:", error);
+    return {
+      props: {
+        isAuthenticated: false,
+        user: null,
+      },
+    };
+  }
+};
+
+export default function Main({ isAuthenticated }: HomeProps) {
   return (
     <div className="relative min-h-screen flex justify-center items-center">
       <VideoBackground />
       <div className="relative z-10 flex flex-col justify-center items-center text-center">
         <div className="flex flex-row items-center gap-4 mb-[1rem]">
-            <h1 className="font-bold text-6xl font-gotham text-white drop-shadow-lg">
-              The Viral Note
-            </h1>
-            <Image 
-              className="" 
-              src={"/media/spotifylogo.png"} 
-              alt={"Spotify Logo"} 
-              width={100} 
-              height={100}
-            />
+          <h1 className="font-bold text-6xl font-gotham text-white drop-shadow-lg">
+            The Viral Note
+          </h1>
+          <Image
+            className=""
+            src={"/media/spotifylogo.png"}
+            alt={"Spotify Logo"}
+            width={100}
+            height={100}
+          />
         </div>
-        <div className="flex flex-row gap-5">
-            <button 
-            onClick={redirectToSpotify}
-            className="bg-spotifyGreen hover:bg-green-700 text-spotifyGray font-bold py-4 px-5 rounded-full 
-            transition-all duration-200 transform hover:scale-105 shadow-lg text-lg font-gotham"
-            >
-            Login with Spotify
-            </button>
+        {isAuthenticated ? (
+          <>
             <button
-            onClick={() => window.location.href = "/home"} 
-            className="bg-black text-white text-lg font-gotham border-2 border-white font-bold 
-            rounded-full transition-all duration-200 transform py-4 px-[5rem] hover:scale-105 shadow-lg
-            hover:bg-white hover:text-black">
-                Play
+              onClick={() => (window.location.href = "/home")}
+              className="bg-black text-white text-lg font-gotham border-2 border-white font-bold 
+                rounded-full transition-all duration-200 transform py-4 px-[5rem] hover:scale-105 shadow-lg
+                hover:bg-white hover:text-black"
+            >
+              Play
             </button>
-        </div>
+          </>
+        ) : (
+          <>
+            <div className="flex flex-row gap-5">
+              <button
+                onClick={redirectToSpotify}
+                className="bg-spotifyGreen hover:bg-green-700 text-spotifyGray font-bold py-4 px-5 rounded-full 
+                transition-all duration-200 transform hover:scale-105 shadow-lg text-lg font-gotham"
+              >
+                Login with Spotify
+              </button>
+              <button
+                onClick={() => (window.location.href = "/home")}
+                className="bg-black text-white text-lg font-gotham border-2 border-white font-bold 
+                rounded-full transition-all duration-200 transform py-4 px-[5rem] hover:scale-105 shadow-lg
+                hover:bg-white hover:text-black"
+              >
+                Play
+              </button>
+            </div>
+          </>
+        )}
       </div>
     </div>
-  )
+  );
 }

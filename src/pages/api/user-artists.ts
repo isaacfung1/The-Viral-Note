@@ -105,7 +105,6 @@ export default async function getUserArtists(req: NextApiRequest, res: NextApiRe
         try {
             console.log("=== Starting database insertion ===");
             for (const artist of uniqueArtists) {
-                console.log(`Inserting artist: ${artist.name} (from ${artist.timeRange})`);
                 
                 await pool.query(`INSERT INTO artists (artist_id, name, image_url, genres, popularity) 
                     VALUES ($1, $2, $3, $4, $5)

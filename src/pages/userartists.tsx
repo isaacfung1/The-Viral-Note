@@ -198,7 +198,7 @@ export default function Home({ artistsData }: UserArtistsProps) {
                   )}&background=10b981&color=fff&size=200&rounded=true`
                 }
                 alt={currentArtist.username}
-                className="w-52 h-52 rounded-full object-cover border-4 border-green-500 shadow-lg mx-auto"
+                className="w-52 h-52 rounded-full object-cover border-4 border-spotifyGreen shadow-lg mx-auto"
                 onError={(e) => {
                   e.currentTarget.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(
                     currentArtist.username
