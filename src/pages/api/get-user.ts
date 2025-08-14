@@ -3,6 +3,7 @@ import axios from "axios";
 import pool from "../../lib/db-client";
 import { parse } from "cookie";
 import { serialize } from "cookie";
+import { supabaseServer } from "../../utils/supabaseServer";
 
 async function refreshAccessToken(refresh_token: string){
     const clientId = process.env.NEXT_PUBLIC_SPOTIFY_CLIENT_ID;
@@ -38,19 +39,20 @@ export default async function getUser(req: NextApiRequest, res: NextApiResponse)
         const userId = userData.id;
         const username = userData.display_name;
         const imageUrl = userData.images?.[0]?.url;
+        const userEmail = userData.email || null;
         
         console.log("=== DEBUG: About to insert into DB ===");
-        console.log("User ID:", userId);
-        console.log("Username:", username);
-        console.log("Image URL:", imageUrl);
         
         try {
-            await pool.query(
-                `INSERT INTO users (user_id, username, image_url) 
-                VALUES ($1, $2, $3)
-                ON CONFLICT (user_id) DO UPDATE SET username = EXCLUDED.username, image_url = EXCLUDED.image_url`, 
-                [userId, username, imageUrl]
-            );
+            const {error: userError} = await supabaseServer
+            .from('users')
+            .upsert({user_id: userId, username: username, image_url: imageUrl, email: userEmail}, {onConflict: 'user_id'})
+
+            if (userError) {
+                console.error("Supabase error:", userError.message);
+                throw userError;
+            }
+
             console.log("=== SUCCESS: User inserted into DB ===");
             res.status(200).json({message: "successful db insert"});
         } 
@@ -89,6 +91,7 @@ export default async function getUser(req: NextApiRequest, res: NextApiResponse)
         const userId = userData.id;
         const username = userData.display_name;
         const imageUrl = userData.images?.[0]?.url;
+        const userEmail = userData.email || null;
         
         console.log("=== DEBUG: About to insert into DB ===");
         console.log("User ID:", userId);
@@ -96,12 +99,14 @@ export default async function getUser(req: NextApiRequest, res: NextApiResponse)
         console.log("Image URL:", imageUrl);
         
         try {
-            await pool.query(
-                `INSERT INTO users (user_id, username, image_url) 
-                VALUES ($1, $2, $3)
-                ON CONFLICT (user_id) DO UPDATE SET username = EXCLUDED.username, image_url = EXCLUDED.image_url`, 
-                [userId, username, imageUrl]
-            );
+            const {error: userError} = await supabaseServer
+            .from('users')
+            .upsert({user_id: userId, username: username, image_url: imageUrl, email: userEmail}, {onConflict: 'user_id'})
+
+            if (userError) {
+                console.error("Supabase error:", userError.message);
+                throw userError;
+            }
             console.log("=== SUCCESS: User inserted into DB ===");
             res.status(200).json({message: "successful db insert",
                 user: {userId}
@@ -143,6 +148,7 @@ export default async function getUser(req: NextApiRequest, res: NextApiResponse)
                     const userId = userData.id;
                     const username = userData.display_name;
                     const imageUrl = userData.images?.[0]?.url;
+                    const userEmail = userData.email || null;
                     
                     console.log("=== DEBUG: About to insert into DB (after token refresh) ===");
                     console.log("User ID:", userId);
@@ -150,27 +156,26 @@ export default async function getUser(req: NextApiRequest, res: NextApiResponse)
                     console.log("Image URL:", imageUrl);
                     
                     try {
-                        await pool.query(
-                            `INSERT INTO users (user_id, username, image_url) 
-                            VALUES ($1, $2, $3)
-                            ON CONFLICT (user_id) DO UPDATE SET username = EXCLUDED.username, image_url = EXCLUDED.image_url`, 
-                            [userId, username, imageUrl]
-                        );
+                        const {error: userError} = await supabaseServer
+                        .from('users')
+                        .upsert({user_id: userId, username: username, image_url: imageUrl, email: userEmail}, {onConflict: 'user_id'})
+
                         console.log("=== SUCCESS: User inserted into DB (after token refresh) ===");
                         res.status(200).json({message: "successful db insert", user: {userId}});
                         return;
-                    } catch (dbError: any) {
+                    } 
+                    catch (dbError: any) {
                         console.log("=== ERROR: Database insertion failed (after token refresh) ===");
                         console.log("DB Error:", dbError.message);
-                        throw dbError;
                     }
                 }
-            } catch (refreshError) {
+            } 
+            catch (refreshError) {
                 console.error('Token refresh failed:', refreshError);
             }
         }
         
-        console.error("failed to fetch user or insert", err.response?.data || err.message);
-        res.status(401).json({error: "unauthorized or db error"});
+    console.error("failed to fetch user or insert", err.response?.data || err.message);
+    res.status(401).json({error: "unauthorized or db error"});
     }
 }

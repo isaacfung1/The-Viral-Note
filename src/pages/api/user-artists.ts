@@ -2,6 +2,7 @@ import { NextApiRequest, NextApiResponse } from 'next'
 import axios from 'axios';
 import pool from '../../lib/db-client';
 import { parse } from 'cookie';
+import { supabaseServer } from '../../utils/supabaseServer';
 
 export default async function getUserArtists(req: NextApiRequest, res: NextApiResponse) {
     console.log('=== DEBUG: Artists API called ===');
@@ -103,32 +104,46 @@ export default async function getUserArtists(req: NextApiRequest, res: NextApiRe
         console.log(`Unique artists after deduplication: ${uniqueArtists.length}`);
 
         try {
-            console.log("=== Starting database insertion ===");
-            for (const artist of uniqueArtists) {
-                
-                await pool.query(`INSERT INTO artists (artist_id, name, image_url, genres, popularity) 
-                    VALUES ($1, $2, $3, $4, $5)
-                    ON CONFLICT (artist_id) 
-                    DO UPDATE SET name = EXCLUDED.name, genres = EXCLUDED.genres, 
-                    image_url = EXCLUDED.image_url, popularity = EXCLUDED.popularity`, 
-                    [artist.id, artist.name, artist.imageUrl, artist.genres, artist.popularity]);
+            const artistsRows = uniqueArtists.map(artist => ({
+                artistId: artist.id,
+                artistName: artist.name,
+                artistImageUrl: artist.imageUrl,
+                artistGenres: artist.genres,
+                artistPopularity: artist.popularity,
+                timeRange: artist.timeRange
+            }));
 
-                await pool.query(`INSERT INTO user_top_artists (user_id, artist_id) 
-                    VALUES ($1, $2)
-                    ON CONFLICT (user_id, artist_id) 
-                    DO NOTHING`, [userId, artist.id]);
+            const userTopArtistsRows = artistsRows.map(artist => ({
+                userId: userId,
+                artistId: artist.artistId
+
+            }));
+
+            const [{error: artistError}, {error: userTopArtistsError}] = await Promise.all([
+                supabaseServer
+                .from('artists')
+                .upsert(artistsRows, { onConflict: 'artistId'}),
+
+                supabaseServer
+                .from('user_top_artists')
+                .upsert(userTopArtistsRows, {onConflict: 'userId, artistId', ignoreDuplicates: true})
+
+            ]);
+
+            if (artistError || userTopArtistsError) {
+                console.error("Insertion error:", artistError || userTopArtistsError);
+                throw artistError || userTopArtistsError;
             }
-            console.log("=== SUCCESS: Artists inserted into DB ===");
+
             res.status(200).json({message: "successful db insert"});
         }
         catch (dbError: any) {
             console.log("=== ERROR: Database insertion failed ===");
-            console.log("DB Error:", dbError.message);
-            throw dbError;
+            res.status(500).json({dbError: dbError.message});
         }
     }
     catch (err: any) {
-        console.error("failed to fetch artists or insert", err.response?.data || err.message);
-        res.status(401).json({error: "unauthorized or db error"});
+        console.error("failed to fetch artists", err.response?.data || err.message);
+        res.status(401).json({error: "unauthorized fetching artists"});
     }
 }

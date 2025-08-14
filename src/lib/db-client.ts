@@ -1,11 +1,14 @@
 import { Pool } from 'pg';
 
 const pool = new Pool({
-    user: process.env.POSTGRES_USER,
-    host: 'localhost',
-    database: process.env.POSTGRES_DB,
-    password: process.env.POSTGRES_PASSWORD,
-    port: 5433
+   connectionString: process.env.SUPABASE_DB_URL,
+   ssl: {
+    rejectUnauthorized: false
+   },
+
+  max: 20, 
+  idleTimeoutMillis: 30000,
+  connectionTimeoutMillis: 2000,
 });
 
 export default pool;
