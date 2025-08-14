@@ -51,53 +51,68 @@ export default async function getUserArtists(req: NextApiRequest, res: NextApiRe
         userId = userData.id;
     }
     try {
-        const artistsResponse = await axios.get('https://api.spotify.com/v1/me/top/artists', {
-            params: {
-                limit: 50,
-                time_range: 'long_term',
-                offset: 0
-            },
-            headers: {
-                'Authorization': 'Bearer ' + access_token
+        const timeRanges = ['short_term', 'medium_term', 'long_term'];
+        let allArtistsData: any[] = [];
+        
+        for (const timeRange of timeRanges) {
+            console.log(`=== Fetching artists for ${timeRange} ===`);
+            
+            const artistsResponse = await axios.get('https://api.spotify.com/v1/me/top/artists', {
+                params: {
+                    limit: 50,
+                    time_range: timeRange,
+                    offset: 0
+                },
+                headers: {
+                    'Authorization': 'Bearer ' + access_token
+                }
+            });
+
+            if (artistsResponse.status !== 200) {
+                console.log(`Failed to retrieve ${timeRange} artists`);
+                continue;
             }
-        })  
 
-        if (artistsResponse.status !== 200) {
-            return res.status(401).json({ error: 'unable to retrieve user top artists'});
+            const artistsData = artistsResponse.data.items;
+            console.log(`Got ${artistsData.length} artists for ${timeRange}`);
+
+            const cleanedArtistsData = artistsData.map((artist: any) => ({
+                id: artist.id,
+                name: artist.name,
+                imageUrl: artist.images?.[0]?.url,
+                genres: artist.genres,
+                popularity: artist.popularity,
+                timeRange: timeRange
+            }));
+
+            allArtistsData.push(...cleanedArtistsData);
         }
 
-        const artistsData = artistsResponse.data.items;
+        console.log(`Total artists collected: ${allArtistsData.length}`);
+        
+        const seen = new Set();
+        const uniqueArtists = [];
 
-        type Image = {
-            url: string;
-        };
-        type artist = {
-            id: string;
-            name: string;
-            imageUrl: string;
-            images: Image[];
-            url: string;
-            genres: string[];
-            popularity: number;
+        for (const artist of allArtistsData) {
+            if (!seen.has(artist.id)) {
+                seen.add(artist.id);
+                uniqueArtists.push(artist);
+            }
         }
-
-        const cleanedArtistsData = artistsData.map((artist:artist) => ({
-            id: artist.id,
-            name: artist.name,
-            imageUrl: artist.images?.[0]?.url,
-            genres: artist.genres,
-            popularity: artist.popularity
-        }));
+        
+        console.log(`Unique artists after deduplication: ${uniqueArtists.length}`);
 
         try {
-            for (const artist of cleanedArtistsData) {
+            console.log("=== Starting database insertion ===");
+            for (const artist of uniqueArtists) {
+                console.log(`Inserting artist: ${artist.name} (from ${artist.timeRange})`);
+                
                 await pool.query(`INSERT INTO artists (artist_id, name, image_url, genres, popularity) 
                     VALUES ($1, $2, $3, $4, $5)
                     ON CONFLICT (artist_id) 
                     DO UPDATE SET name = EXCLUDED.name, genres = EXCLUDED.genres, 
                     image_url = EXCLUDED.image_url, popularity = EXCLUDED.popularity`, 
                     [artist.id, artist.name, artist.imageUrl, artist.genres, artist.popularity]);
-
 
                 await pool.query(`INSERT INTO user_top_artists (user_id, artist_id) 
                     VALUES ($1, $2)

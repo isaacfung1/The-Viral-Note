@@ -125,11 +125,11 @@ export default async function getUser(req: NextApiRequest, res: NextApiResponse)
 
                     res.setHeader('Set-Cookie', [
                         serialize('access_token', newAccessToken, {
-                            httpOnly: true,
-                            secure: true,
-                            sameSite: 'strict',
-                            path: '/',
-                            maxAge: 36000
+                          httpOnly: true,
+                          secure: true,
+                          sameSite: 'strict',
+                          path: '/',
+                          maxAge: 36000
                         })
                     ]);
 
