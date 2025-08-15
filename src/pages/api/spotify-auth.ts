@@ -31,8 +31,8 @@ export default async function spotifyAuth(req: NextApiRequest, res: NextApiRespo
                 res.setHeader('Set-Cookie', [
                     serialize('access_token', access_token, {
                         httpOnly: true,
-                        secure: true,
-                        sameSite: 'strict',
+                        secure: process.env.NODE_ENV === 'production',
+                        sameSite: 'lax',
                         path: '/',
                         maxAge: 36000
                     }),
@@ -45,7 +45,7 @@ export default async function spotifyAuth(req: NextApiRequest, res: NextApiRespo
                     )
                 ])
                 try {
-                    const protocol = req.headers.host?.includes('ngrok') ? 'https' : 'http';
+                    const protocol = req.headers.host?.includes('vercel') ? 'https' : 'http';
                     const baseUrl = `${protocol}://${req.headers.host}`;
 
                     console.log('=== DEBUG: About to call users API ===');

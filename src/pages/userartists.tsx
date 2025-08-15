@@ -25,7 +25,7 @@ export const getServerSideProps: GetServerSideProps = async (context) => {
     const { req } = context;
     const cookies = req.headers.cookie || "";
 
-    const protocol = req.headers.host?.includes("ngrok") ? "https" : "http";
+    const protocol = req.headers.host?.includes("vercel") ? "https" : "http";
     const baseUrl = `${protocol}://${req.headers.host}`;
 
     console.log("Base URL:", baseUrl);
