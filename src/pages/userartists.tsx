@@ -26,7 +26,7 @@ export const getServerSideProps: GetServerSideProps = async (context) => {
     const cookies = req.headers.cookie || "";
 
     const protocol = req.headers.host?.includes("vercel") ? "https" : "http";
-    const baseUrl = `${protocol}://${req.headers.host}`;
+    const baseUrl = 'https://the-viral-note.vercel.app';
 
     console.log("Base URL:", baseUrl);
 

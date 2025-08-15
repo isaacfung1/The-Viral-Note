@@ -26,7 +26,7 @@ export default async function spotifyAuth(req: NextApiRequest, res: NextApiRespo
 
                 })
 
-                const {access_token, refresh_token} = token.data;
+                const {access_token, refresh_token, expires_in} = token.data;
                 
                 res.setHeader('Set-Cookie', [
                     serialize('access_token', access_token, {
@@ -34,22 +34,19 @@ export default async function spotifyAuth(req: NextApiRequest, res: NextApiRespo
                         secure: process.env.NODE_ENV === 'production',
                         sameSite: 'lax',
                         path: '/',
-                        maxAge: 36000
+                        maxAge: expires_in
                     }),
                     serialize('refresh_token', refresh_token, {
                         httpOnly: true,
                         secure: process.env.NODE_ENV === 'production',
-                        sameSite: 'strict',
+                        sameSite: 'lax',
                         path: '/',
+                        maxAge: 60 * 60 * 24 * 30
                     }
                     )
                 ])
                 try {
-                    const protocol = req.headers.host?.includes('vercel') ? 'https' : 'http';
-                    const baseUrl = `${protocol}://${req.headers.host}`;
-
                     console.log('=== DEBUG: About to call users API ===');
-                    console.log('Base URL:', baseUrl);
                     console.log('Access token exists:', !!access_token);
                     
                     const spotifyUserResponse = await axios.get("https://api.spotify.com/v1/me", {
@@ -58,6 +55,8 @@ export default async function spotifyAuth(req: NextApiRequest, res: NextApiRespo
                         }
                     });
                     const userData = spotifyUserResponse.data;
+
+                    const baseUrl = 'https://theviralnote.vercel.app';
 
                     console.log('=== DEBUG: User data fetched successfully ===');
                     const [userResponse, artistResponse] = await Promise.all([
@@ -70,15 +69,14 @@ export default async function spotifyAuth(req: NextApiRequest, res: NextApiRespo
                             access_token: access_token
                         })
                     ]);
-                    console.log('=== DEBUG: All data stored successfully ===');
-                    console.log('User response:', userResponse.data.message);
-                    console.log('Artist response:', artistResponse.data);
+
+                    return res.redirect('/home');
                 }
                 catch (userError) {
                     console.log('=== ERROR: Failed to store data ===');
                     console.log('Error:', userError);
+                    return res.redirect('/home');
                 }
-                res.redirect('/home');
             }
             catch (error) {
                 console.error(error);
