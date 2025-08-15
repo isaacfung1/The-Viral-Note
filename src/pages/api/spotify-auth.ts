@@ -59,7 +59,7 @@ export default async function spotifyAuth(req: NextApiRequest, res: NextApiRespo
                     const baseUrl = 'https://theviralnote.vercel.app';
 
                     console.log('=== DEBUG: User data fetched successfully ===');
-                    const [userResponse, artistResponse] = await Promise.all([
+                    await Promise.all([
                         axios.post(`${baseUrl}/api/get-user`, {
                             userData: userData,
                             access_token: access_token

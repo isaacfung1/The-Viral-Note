@@ -24,11 +24,7 @@ export const getServerSideProps: GetServerSideProps = async (context) => {
   try {
     const { req } = context;
     const cookies = req.headers.cookie || "";
-
-    const protocol = req.headers.host?.includes("vercel") ? "https" : "http";
     const baseUrl = 'https://the-viral-note.vercel.app';
-
-    console.log("Base URL:", baseUrl);
 
     console.log("=== Calling /api/get-user ===");
     const userResponse = await axios.get(`${baseUrl}/api/get-user`, {
