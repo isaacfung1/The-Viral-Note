@@ -23,12 +23,21 @@ interface SpotifyTokenResponse {
   scope?: string;
 }
 
-interface CustomError extends Error {
-  response?: {
-    status: number;
-    data?: any;
-  };
-}
+interface SpotifyErrorResponse {
+    error: {
+      status: number;
+      message: string;
+    };
+  }
+  
+  interface CustomError extends Error {
+    response?: {
+      status: number;
+      data?: SpotifyErrorResponse | unknown;
+    };
+    status?: number;
+    statusCode?: number;
+  }
 
 interface UserDataForDB {
   user_id: string;
