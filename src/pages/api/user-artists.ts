@@ -1,6 +1,5 @@
 import { NextApiRequest, NextApiResponse } from 'next'
 import axios from 'axios';
-import pool from '../../lib/db-client';
 import { parse } from 'cookie';
 import { supabaseServer } from '../../utils/supabaseServer';
 
@@ -52,8 +51,24 @@ export default async function getUserArtists(req: NextApiRequest, res: NextApiRe
         userId = userData.id;
     }
     try {
+        type RawArtist = {
+            id: string;
+            name: string;
+            images: { url: string; }[]; 
+            genres: string[];
+            popularity: number;
+            timeRange: string;
+        }
+        type Artist = {
+            id: string;
+            name: string;
+            imageUrl: string;
+            genres: string[];
+            popularity: number;
+            timeRange: string;
+        }
         const timeRanges = ['short_term', 'medium_term', 'long_term'];
-        let allArtistsData: any[] = [];
+        const allArtistsData: Artist[] = [];
         
         for (const timeRange of timeRanges) {
             console.log(`=== Fetching artists for ${timeRange} ===`);
@@ -74,10 +89,10 @@ export default async function getUserArtists(req: NextApiRequest, res: NextApiRe
                 continue;
             }
 
-            const artistsData = artistsResponse.data.items;
+            const artistsData: RawArtist[] = artistsResponse.data.items;
             console.log(`Got ${artistsData.length} artists for ${timeRange}`);
 
-            const cleanedArtistsData = artistsData.map((artist: any) => ({
+            const cleanedArtistsData: Artist[]= artistsData.map((artist: RawArtist) => ({
                 id: artist.id,
                 name: artist.name,
                 imageUrl: artist.images?.[0]?.url,
@@ -137,13 +152,13 @@ export default async function getUserArtists(req: NextApiRequest, res: NextApiRe
 
             res.status(200).json({message: "successful db insert"});
         }
-        catch (dbError: any) {
+        catch (dbError) {
             console.log("=== ERROR: Database insertion failed ===");
-            res.status(500).json({dbError: dbError.message});
+            res.status(500).json({dbError: "failed to insert artists into db"});
         }
     }
-    catch (err: any) {
-        console.error("failed to fetch artists", err.response?.data || err.message);
+    catch (error) {
+        console.error("failed to fetch artists", error);
         res.status(401).json({error: "unauthorized fetching artists"});
     }
 }

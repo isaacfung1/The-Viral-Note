@@ -1,9 +1,14 @@
 import { NextApiRequest, NextApiResponse } from "next";
 import axios from "axios";
-import pool from "../../lib/db-client";
 import { parse } from "cookie";
 import { serialize } from "cookie";
 import { supabaseServer } from "../../utils/supabaseServer";
+
+interface customError extends Error {
+    response?: {
+        status: number;
+    }
+}
 
 async function refreshAccessToken(refresh_token: string){
     const clientId = process.env.NEXT_PUBLIC_SPOTIFY_CLIENT_ID;
@@ -56,9 +61,9 @@ export default async function getUser(req: NextApiRequest, res: NextApiResponse)
             console.log("=== SUCCESS: User inserted into DB ===");
             res.status(200).json({message: "successful db insert"});
         } 
-        catch (dbError: any) {
+        catch (dbError) {
             console.log("=== ERROR: Database insertion failed ===");
-            console.log("DB Error:", dbError.message);
+            console.log("DB Error:", dbError);
             throw dbError;
         }
         return;
@@ -112,15 +117,16 @@ export default async function getUser(req: NextApiRequest, res: NextApiResponse)
                 user: {userId}
             });
         } 
-        catch (dbError: any) {
+        catch (dbError) {
             console.log("=== ERROR: Database insertion failed ===");
-            console.log("DB Error:", dbError.message);
+            console.log("DB Error:", dbError);
             throw dbError;
         }
     }
     
-    catch (err:any) {
-        if (err.response?.status === 401) {
+    catch (err) {
+        const error = err as customError;
+        if (error.response?.status === 401) {
             try {
                 const cookies = req.headers.cookie ? parse(req.headers.cookie) : {};
                 const refresh_token = cookies.refresh_token;
@@ -156,17 +162,18 @@ export default async function getUser(req: NextApiRequest, res: NextApiResponse)
                     console.log("Image URL:", imageUrl);
                     
                     try {
-                        const {error: userError} = await supabaseServer
+                        await supabaseServer
                         .from('users')
                         .upsert({user_id: userId, username: username, image_url: imageUrl, email: userEmail}, {onConflict: 'user_id'})
 
                         console.log("=== SUCCESS: User inserted into DB (after token refresh) ===");
                         res.status(200).json({message: "successful db insert", user: {userId}});
                         return;
+
                     } 
-                    catch (dbError: any) {
+                    catch (dbError) {
                         console.log("=== ERROR: Database insertion failed (after token refresh) ===");
-                        console.log("DB Error:", dbError.message);
+                        console.log("DB Error:", dbError);
                     }
                 }
             } 
@@ -175,7 +182,7 @@ export default async function getUser(req: NextApiRequest, res: NextApiResponse)
             }
         }
         
-    console.error("failed to fetch user or insert", err.response?.data || err.message);
+    console.error("failed to fetch user or insert", error.response || error.message);
     res.status(401).json({error: "unauthorized or db error"});
     }
 }

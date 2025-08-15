@@ -1,4 +1,4 @@
-export default function (
+export default function ModalOverlay(
     props: { gameWon: boolean; userScore: number; resetGame: () => void; quitGame: () => void }) {
   return (
     <>

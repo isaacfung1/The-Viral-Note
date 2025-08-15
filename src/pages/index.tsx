@@ -6,7 +6,6 @@ import axios from "axios";
 
 interface HomeProps {
   isAuthenticated: boolean;
-  user?: any;
 }
 
 export const getServerSideProps: GetServerSideProps = async (context) => {
@@ -29,16 +28,15 @@ export const getServerSideProps: GetServerSideProps = async (context) => {
 
     return {
       props: {
-        isAuthenticated,
-        user: userResponse.data.user || null,
+        isAuthenticated
       },
     };
-  } catch (error) {
+  } 
+  catch (error) {
     console.error("Error checking user authentication:", error);
     return {
       props: {
-        isAuthenticated: false,
-        user: null,
+        isAuthenticated: false
       },
     };
   }

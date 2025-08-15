@@ -1,7 +1,5 @@
 import { supabaseServer } from '@/utils/supabaseServer';
-import pool from '../../lib/db-client';
 import { NextApiRequest, NextApiResponse } from 'next';
-
 
 export default async function getArtistData(req: NextApiRequest, res: NextApiResponse) {
     try {
@@ -49,9 +47,8 @@ export default async function getArtistData(req: NextApiRequest, res: NextApiRes
         console.log('Artists data prepared:', gameArtistsData.length, 'artists');
         return res.status(200).json({ artistsData: gameArtistsData });
     }
-    catch (error: any) {
+    catch (error) {
         console.error("=== ERROR in api-client ===");
-        console.error("Error message:", error.message);
         console.error("Full error:", error);
         return res.status(500).json({ error: "Failed to prepare artists data" });
     }

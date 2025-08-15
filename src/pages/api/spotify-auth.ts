@@ -74,10 +74,9 @@ export default async function spotifyAuth(req: NextApiRequest, res: NextApiRespo
                     console.log('User response:', userResponse.data.message);
                     console.log('Artist response:', artistResponse.data);
                 }
-                catch (userError: any) {
+                catch (userError) {
                     console.log('=== ERROR: Failed to store data ===');
-                    console.log('Error message:', userError.message);
-                    console.log('Error response:', userError.response?.data);
+                    console.log('Error:', userError);
                 }
                 res.redirect('/home');
             }

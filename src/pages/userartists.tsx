@@ -4,6 +4,7 @@ import { GetServerSideProps } from "next";
 import axios from "axios";
 import NumberFlow from "@number-flow/react";
 import ModalOverlay from "../components/modal-overlay";
+import Image from "next/image";
 
 interface Artist {
   username: string;
@@ -56,11 +57,9 @@ export const getServerSideProps: GetServerSideProps = async (context) => {
         artistsData: artistsResponse.data.artistsData || {},
       },
     };
-  } catch (error: any) {
+  } catch (error) {
     console.error("=== ERROR in getServerSideProps ===");
-    console.error("Error message:", error.message);
-    console.error("Error response:", error.response?.data);
-    console.error("Error status:", error.response?.status);
+    console.error("Error calling get-user or api-client:", error);
 
     return {
       props: {
@@ -190,7 +189,7 @@ export default function Home({ artistsData }: UserArtistsProps) {
         <div className="text-center">
           {currentArtist && (
             <div className="mb-4">
-              <img
+              <Image
                 src={
                   currentArtist.imageUrl ||
                   `https://ui-avatars.com/api/?name=${encodeURIComponent(
@@ -233,7 +232,7 @@ export default function Home({ artistsData }: UserArtistsProps) {
         <div className="text-center">
           {nextArtist && (
             <div className="mb-4">
-              <img
+              <Image
                 src={
                   nextArtist.imageUrl ||
                   `https://ui-avatars.com/api/?name=${encodeURIComponent(
