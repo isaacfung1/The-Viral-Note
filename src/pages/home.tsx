@@ -7,7 +7,6 @@ import Image from "next/image";
 
 interface HomeProps {
   isAuthenticated: boolean;
-  user?: any;
 }
 
 export const getServerSideProps: GetServerSideProps = async (context) => {
@@ -30,22 +29,20 @@ export const getServerSideProps: GetServerSideProps = async (context) => {
 
     return {
       props: {
-        isAuthenticated,
-        user: userResponse.data.user || null,
+        isAuthenticated
       },
     };
   } catch (error) {
     console.error("Error checking user authentication:", error);
     return {
       props: {
-        isAuthenticated: false,
-        user: null,
+        isAuthenticated: false
       },
     };
   }
 };
 
-export default function Home({ isAuthenticated, user }: HomeProps) {
+export default function Home({ isAuthenticated }: HomeProps) {
   const router = useRouter();
   return (
     <div className="w-screen h-screen flex flex-row justify-center items-center bg-spotifyGray">
