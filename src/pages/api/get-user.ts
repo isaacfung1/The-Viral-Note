@@ -4,185 +4,177 @@ import { parse } from "cookie";
 import { serialize } from "cookie";
 import { supabaseServer } from "../../utils/supabaseServer";
 
-interface customError extends Error {
-    response?: {
-        status: number;
-    }
+interface SpotifyUser {
+  id: string;
+  display_name: string;
+  email?: string;
+  images?: Array<{
+    url: string;
+    height?: number;
+    width?: number;
+  }>;
 }
 
-async function refreshAccessToken(refresh_token: string){
-    const clientId = process.env.NEXT_PUBLIC_SPOTIFY_CLIENT_ID;
-    const clientSecret = process.env.NEXT_PUBLIC_SPOTIFY_CLIENT_SECRET;
-
-    try {
-        const params = new URLSearchParams({ 
-            grant_type: 'refresh_token',
-            refresh_token: refresh_token,
-        });
-
-        const response = await axios.post('https://accounts.spotify.com/api/token', params, {
-            headers: {
-                'Content-Type': 'application/x-www-form-urlencoded',
-                'Authorization': `Basic ${Buffer.from(`${clientId}:${clientSecret}`).toString('base64')}`
-            }
-        });
-        return response.data.access_token;
-    }
-    catch (error) {
-        console.error("Failed to refresh access token:", error);
-        throw error;
-    }
+interface SpotifyTokenResponse {
+  access_token: string;
+  token_type: string;
+  expires_in: number;
+  refresh_token?: string;
+  scope?: string;
 }
 
-export default async function getUser(req: NextApiRequest, res: NextApiResponse){
-    console.log('=== DEBUG: Users API called ===');
+interface CustomError extends Error {
+  response?: {
+    status: number;
+    data?: any;
+  };
+}
 
-    if (req.body && req.body.userData) {
-        console.log('=== OPTIMIZED: Using user data from request body ===');
-        const userData = req.body.userData;
-        
-        const userId = userData.id;
-        const username = userData.display_name;
-        const imageUrl = userData.images?.[0]?.url;
-        const userEmail = userData.email || null;
-        
-        console.log("=== DEBUG: About to insert into DB ===");
-        
-        try {
-            const {error: userError} = await supabaseServer
-            .from('users')
-            .upsert({user_id: userId, username: username, image_url: imageUrl, email: userEmail}, {onConflict: 'user_id'})
+interface UserDataForDB {
+  user_id: string;
+  username: string;
+  image_url: string | null;
+  email: string | null;
+}
 
-            if (userError) {
-                console.error("Supabase error:", userError.message);
-                throw userError;
-            }
+async function refreshAccessToken(refresh_token: string): Promise<string> {
+  const clientId = process.env.NEXT_PUBLIC_SPOTIFY_CLIENT_ID;
+  const clientSecret = process.env.NEXT_PUBLIC_SPOTIFY_CLIENT_SECRET;
 
-            console.log("=== SUCCESS: User inserted into DB ===");
-            res.status(200).json({message: "successful db insert"});
-        } 
-        catch (dbError) {
-            console.log("=== ERROR: Database insertion failed ===");
-            console.log("DB Error:", dbError);
-            throw dbError;
+  try {
+    const params = new URLSearchParams({
+      grant_type: 'refresh_token',
+      refresh_token: refresh_token,
+    });
+
+    const response = await axios.post<SpotifyTokenResponse>('https://accounts.spotify.com/api/token', params, {
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+          'Authorization': `Basic ${Buffer.from(`${clientId}:${clientSecret}`).toString('base64')}`
         }
-        return;
-    }
-    
-    const cookies = req.headers.cookie ? parse(req.headers.cookie) : {};
-    let access_token = cookies.access_token;
+      }
+    );
+    return response.data.access_token;
+  } catch (error) {
+    console.error("Failed to refresh access token:", error);
+    throw error;
+  }
+}
 
-    if (!access_token && req.headers.authorization){
-        access_token = req.headers.authorization.replace('Bearer ', '')
-    }
+export default async function getUser(req: NextApiRequest, res: NextApiResponse) {
+  console.log('=== DEBUG: Users API called ===');
 
-    console.log('Access token from cookies:', !!cookies.access_token);
-    console.log('Access token from headers:', !!req.headers.authorization);
-    console.log('Final access token exists:', !!access_token);
-
-    if (!access_token) {
-        console.log('ERROR: No access token found');
-        return res.status(401).json({error: "no token found"})
-    }
+  if (req.body?.access_token) {
+    console.log('=== OPTIMIZED: Using access token from request body ===');
     try {
-        const userResponse = await axios.get("https://api.spotify.com/v1/me", {
-            headers: {
-                "Authorization": "Bearer " + access_token
-            }
-        });
-
-        const userData = userResponse.data;
-
-        const userId = userData.id;
-        const username = userData.display_name;
-        const imageUrl = userData.images?.[0]?.url;
-        const userEmail = userData.email || null;
-        
-        console.log("=== DEBUG: About to insert into DB ===");
-        console.log("User ID:", userId);
-        console.log("Username:", username);
-        console.log("Image URL:", imageUrl);
-        
-        try {
-            const {error: userError} = await supabaseServer
-            .from('users')
-            .upsert({user_id: userId, username: username, image_url: imageUrl, email: userEmail}, {onConflict: 'user_id'})
-
-            if (userError) {
-                console.error("Supabase error:", userError.message);
-                throw userError;
-            }
-            console.log("=== SUCCESS: User inserted into DB ===");
-            res.status(200).json({message: "successful db insert",
-                user: {userId}
-            });
-        } 
-        catch (dbError) {
-            console.log("=== ERROR: Database insertion failed ===");
-            console.log("DB Error:", dbError);
-            throw dbError;
+      const userResponse = await axios.get<SpotifyUser>("https://api.spotify.com/v1/me", {
+        headers: {
+          "Authorization": `Bearer ${req.body.access_token}`
         }
+      });
+      return await handleUserData(userResponse.data, res);
+    } catch (error) {
+      return handleTokenError(error as CustomError, req, res);
     }
-    
-    catch (err) {
-        const error = err as customError;
-        if (error.response?.status === 401) {
-            try {
-                const cookies = req.headers.cookie ? parse(req.headers.cookie) : {};
-                const refresh_token = cookies.refresh_token;
+  }
 
-                if (refresh_token) {
-                    const newAccessToken = await refreshAccessToken(refresh_token);
+  const cookies = req.headers.cookie ? parse(req.headers.cookie) : {};
+  let access_token = cookies.access_token;
 
-                    res.setHeader('Set-Cookie', [
-                        serialize('access_token', newAccessToken, {
-                          httpOnly: true,
-                          secure: true,
-                          sameSite: 'strict',
-                          path: '/',
-                          maxAge: 36000
-                        })
-                    ]);
+  if (!access_token && req.headers.authorization) {
+    access_token = req.headers.authorization.replace('Bearer ', '');
+  }
 
-                    const userResponse = await axios.get("https://api.spotify.com/v1/me", {
-                        headers: {
-                            "Authorization": "Bearer " + newAccessToken
-                        }
-                    });
+  if (!access_token) {
+    console.log('ERROR: No access token found in cookies or headers');
+    return res.status(401).json({ error: "No access token provided" });
+  }
 
-                    const userData = userResponse.data;
-                    const userId = userData.id;
-                    const username = userData.display_name;
-                    const imageUrl = userData.images?.[0]?.url;
-                    const userEmail = userData.email || null;
-                    
-                    console.log("=== DEBUG: About to insert into DB (after token refresh) ===");
-                    console.log("User ID:", userId);
-                    console.log("Username:", username);
-                    console.log("Image URL:", imageUrl);
-                    
-                    try {
-                        await supabaseServer
-                        .from('users')
-                        .upsert({user_id: userId, username: username, image_url: imageUrl, email: userEmail}, {onConflict: 'user_id'})
+  try {
+    const userResponse = await axios.get<SpotifyUser>("https://api.spotify.com/v1/me", {
+      headers: {
+        "Authorization": `Bearer ${access_token}`
+      }
+    });
+    return await handleUserData(userResponse.data, res);
+  } catch (error) {
+    return handleTokenError(error as CustomError, req, res);
+  }
+}
 
-                        console.log("=== SUCCESS: User inserted into DB (after token refresh) ===");
-                        res.status(200).json({message: "successful db insert", user: {userId}});
-                        return;
+async function handleUserData(userData: SpotifyUser, res: NextApiResponse) {
+  const userDataForDB: UserDataForDB = {
+    user_id: userData.id,
+    username: userData.display_name,
+    image_url: userData.images?.[0]?.url || null,
+    email: userData.email || null
+  };
 
-                    } 
-                    catch (dbError) {
-                        console.log("=== ERROR: Database insertion failed (after token refresh) ===");
-                        console.log("DB Error:", dbError);
-                    }
-                }
-            } 
-            catch (refreshError) {
-                console.error('Token refresh failed:', refreshError);
-            }
+  console.log("=== DEBUG: Inserting user into DB ===");
+  console.log("User ID:", userDataForDB.user_id);
+  console.log("Username:", userDataForDB.username);
+
+  try {
+    const { error: userError } = await supabaseServer
+      .from('users')
+      .upsert(userDataForDB, { onConflict: 'user_id' });
+
+    if (userError) {
+      console.error("Supabase error:", userError.message);
+      throw userError;
+    }
+
+    console.log("=== SUCCESS: User inserted into DB ===");
+    return res.status(200).json({
+      message: "successful db insert",
+      user: { userId: userDataForDB.user_id }
+    });
+  } catch (dbError) {
+    console.log("=== ERROR: Database insertion failed ===");
+    console.log("DB Error:", dbError);
+    return res.status(500).json({ error: "Database operation failed" });
+  }
+}
+
+async function handleTokenError(error: CustomError, req: NextApiRequest, res: NextApiResponse) {
+  if (error.response?.status === 401) {
+    try {
+      const cookies = req.headers.cookie ? parse(req.headers.cookie) : {};
+      const refresh_token = cookies.refresh_token;
+
+      if (!refresh_token) {
+        console.error('No refresh token available');
+        return res.status(401).json({ error: "Session expired, please re-authenticate" });
+      }
+
+      const newAccessToken = await refreshAccessToken(refresh_token);
+
+      res.setHeader('Set-Cookie', serialize('access_token', newAccessToken, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'lax',
+        path: '/',
+        maxAge: 36000
+      }));
+
+      const userResponse = await axios.get<SpotifyUser>("https://api.spotify.com/v1/me", {
+        headers: {
+          "Authorization": `Bearer ${newAccessToken}`
         }
-        
-    console.error("failed to fetch user or insert", error.response || error.message);
-    res.status(401).json({error: "unauthorized or db error"});
+      });
+
+      return await handleUserData(userResponse.data, res);
+    } catch (refreshError) {
+      console.error('Token refresh failed:', refreshError);
+      return res.status(401).json({ 
+        error: "Authentication failed",
+        action: "Please re-login to Spotify"
+      });
     }
+  }
+
+  console.error("Failed to fetch user:", error.response?.status || error.message);
+  return res.status(error.response?.status || 500).json({ 
+    error: "Failed to fetch user data" 
+  });
 }
