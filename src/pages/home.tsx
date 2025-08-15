@@ -63,7 +63,7 @@ export default function Home({ isAuthenticated }: HomeProps) {
               </span>
             </GamemodeButton>
             <GamemodeButton>
-              User Top Songs 👤 🎤 🎹
+              User Top Songs 👤 🎤 🎹 (wip)
               <span className="text-green-400 text-xs block mt-1">
                 Higher or Lower
               </span>
@@ -95,13 +95,13 @@ export default function Home({ isAuthenticated }: HomeProps) {
           </>
         )}
         <GamemodeButton>
-          Random Songs 🎤 🎹
+          Random Songs 🎤 🎹 (wip)
           <span className="text-green-400 text-xs block mt-1">
             Higher or Lower
           </span>
         </GamemodeButton>
         <GamemodeButton>
-          Random Artists 👤
+          Random Artists 👤 (wip)
           <span className="text-green-400 text-xs block mt-1">
             Higher or Lower
           </span>
