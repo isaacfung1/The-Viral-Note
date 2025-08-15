@@ -154,6 +154,7 @@ export default async function getUserArtists(req: NextApiRequest, res: NextApiRe
         }
         catch (dbError) {
             console.log("=== ERROR: Database insertion failed ===");
+            console.error("DB Error:", dbError);
             res.status(500).json({dbError: "failed to insert artists into db"});
         }
     }
