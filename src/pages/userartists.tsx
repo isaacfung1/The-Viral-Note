@@ -24,7 +24,7 @@ export const getServerSideProps: GetServerSideProps = async (context) => {
   try {
     const { req } = context;
     const cookies = req.headers.cookie || "";
-    const baseUrl = 'https://the-viral-note.vercel.app';
+    const baseUrl = 'https://theviralnote.vercel.app';
 
     console.log("=== Calling /api/get-user ===");
     const userResponse = await axios.get(`${baseUrl}/api/get-user`, {
@@ -32,7 +32,6 @@ export const getServerSideProps: GetServerSideProps = async (context) => {
         cookie: cookies,
       },
     });
-    console.log("User response:", userResponse.data);
 
     if (!userResponse.data.user || !userResponse.data.user.userId) {
       console.log("No user data found, returning empty artists");

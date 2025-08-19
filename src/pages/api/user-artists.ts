@@ -1,55 +1,21 @@
 import { NextApiRequest, NextApiResponse } from 'next'
 import axios from 'axios';
-import { parse } from 'cookie';
 import { supabaseServer } from '../../utils/supabaseServer';
 
-export default async function getUserArtists(req: NextApiRequest, res: NextApiResponse) {
-    console.log('=== DEBUG: Artists API called ===');
+interface SpotifyUser {
+    id: string;
+    display_name: string;
+    email?: string;
+    images?: Array<{
+      url: string;
+      height?: number;
+      width?: number;
+    }>;
+  }
+
+export async function getUserArtists(userData: SpotifyUser, access_token: string, req: NextApiRequest, res: NextApiResponse) {
+    const userId = userData.id;
     
-    let userId: string;
-    let access_token: string;
-
-    if (req.body && req.body.userData) {
-        console.log('=== OPTIMIZED: Using user data from request body ===');
-        userId = req.body.userData.id;
-
-        access_token = req.body.access_token;
-        
-        if (!access_token) {
-            const cookies = req.headers.cookie ? parse(req.headers.cookie) : {}
-            access_token = cookies.access_token || '';
-        }
-
-        if (!access_token && req.headers.authorization) {
-            access_token = req.headers.authorization.replace('Bearer ', '');
-        }
-    }
-    
-    else {
-        const cookies = req.headers.cookie ? parse(req.headers.cookie) : {};
-        access_token = cookies.access_token || '';
-
-        if (!access_token && req.headers.authorization){
-            access_token = req.headers.authorization.replace('Bearer ', '')
-        }
-
-        console.log('Access token from cookies:', !!cookies.access_token);
-        console.log('Access token from headers:', !!req.headers.authorization);
-        console.log('Final access token exists:', !!access_token);
-
-            if (!access_token) {
-                console.log('ERROR: No access token found');
-                return res.status(401).json({error: "no token found"})
-            }
-    
-        const userResponse = await axios.get("https://api.spotify.com/v1/me", {
-            headers: {
-                Authorization: "Bearer " + access_token
-            }
-        });
-        const userData = userResponse.data;
-        userId = userData.id;
-    }
     try {
         type RawArtist = {
             id: string;

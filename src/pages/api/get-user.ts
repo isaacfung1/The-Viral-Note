@@ -70,48 +70,7 @@ async function refreshAccessToken(refresh_token: string): Promise<string> {
   }
 }
 
-export default async function getUser(req: NextApiRequest, res: NextApiResponse) {
-  console.log('=== DEBUG: Users API called ===');
-
-  if (req.body?.access_token) {
-    console.log('=== OPTIMIZED: Using access token from request body ===');
-    try {
-      const userResponse = await axios.get<SpotifyUser>("https://api.spotify.com/v1/me", {
-        headers: {
-          "Authorization": `Bearer ${req.body.access_token}`
-        }
-      });
-      return await handleUserData(userResponse.data, res);
-    } catch (error) {
-      return handleTokenError(error as CustomError, req, res);
-    }
-  }
-
-  const cookies = req.headers.cookie ? parse(req.headers.cookie) : {};
-  let access_token = cookies.access_token;
-
-  if (!access_token && req.headers.authorization) {
-    access_token = req.headers.authorization.replace('Bearer ', '');
-  }
-
-  if (!access_token) {
-    console.log('ERROR: No access token found in cookies or headers');
-    return res.status(401).json({ error: "No access token provided" });
-  }
-
-  try {
-    const userResponse = await axios.get<SpotifyUser>("https://api.spotify.com/v1/me", {
-      headers: {
-        "Authorization": `Bearer ${access_token}`
-      }
-    });
-    return await handleUserData(userResponse.data, res);
-  } catch (error) {
-    return handleTokenError(error as CustomError, req, res);
-  }
-}
-
-async function handleUserData(userData: SpotifyUser, res: NextApiResponse) {
+export async function handleUserData(userData: SpotifyUser, res: NextApiResponse) {
   const userDataForDB: UserDataForDB = {
     user_id: userData.id,
     username: userData.display_name,

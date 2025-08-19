@@ -13,8 +13,7 @@ export const getServerSideProps: GetServerSideProps = async (context) => {
     const { req } = context;
     const cookies = req.headers.cookie || "";
 
-    const protocol = req.headers.host?.includes("ngrok") ? "https" : "http";
-    const baseUrl = `${protocol}://${req.headers.host}`;
+    const baseUrl = 'https://theviralnote.vercel.app';
 
     const userResponse = await axios.get(`${baseUrl}/api/get-user`, {
       headers: {

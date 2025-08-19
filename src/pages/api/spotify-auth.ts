@@ -1,7 +1,9 @@
 import { NextApiRequest, NextApiResponse } from 'next';
 import querystring from 'querystring';
 import axios from 'axios';
-import { serialize } from 'cookie'; 
+import { serialize } from 'cookie';
+import { handleUserData } from './get-user'
+import { getUserArtists } from './user-artists';
 
 export default async function spotifyAuth(req: NextApiRequest, res: NextApiResponse) {
     const code = req.query.code || null;
@@ -27,7 +29,9 @@ export default async function spotifyAuth(req: NextApiRequest, res: NextApiRespo
                 })
 
                 const {access_token, refresh_token, expires_in} = token.data;
-                
+
+                res.setHeader('Access-Control-Allow-Credentials', 'true');
+                res.setHeader('Access-Control-Allow-Origin', 'https://theviralnote.vercel.app');
                 res.setHeader('Set-Cookie', [
                     serialize('access_token', access_token, {
                         httpOnly: true,
@@ -56,18 +60,12 @@ export default async function spotifyAuth(req: NextApiRequest, res: NextApiRespo
                     });
                     const userData = spotifyUserResponse.data;
 
-                    const baseUrl = 'https://theviralnote.vercel.app';
 
                     console.log('=== DEBUG: User data fetched successfully ===');
+
                     await Promise.all([
-                        axios.post(`${baseUrl}/api/get-user`, {
-                            userData: userData,
-                            access_token: access_token
-                        }),
-                        axios.post(`${baseUrl}/api/user-artists`, {
-                            userData: userData,
-                            access_token: access_token
-                        })
+                        handleUserData(userData, res),
+                        getUserArtists(userData, access_token, req, res)
                     ]);
 
                     return res.redirect('/home');
