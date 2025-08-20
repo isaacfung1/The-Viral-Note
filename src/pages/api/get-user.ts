@@ -20,12 +20,12 @@ interface SpotifyUser {
 //   scope?: string;
 // }
 
-interface SpotifyErrorResponse {
-    error: {
-      status: number;
-      message: string;
-    };
-  }
+// interface SpotifyErrorResponse {
+//     error: {
+//       status: number;
+//       message: string;
+//     };
+//   }
   
 //   interface CustomError extends Error {
 //     response?: {
