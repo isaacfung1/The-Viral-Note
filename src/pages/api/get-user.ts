@@ -1,4 +1,3 @@
-import { NextApiResponse } from "next";
 import { supabaseServer } from "../../utils/supabaseServer";
 
 interface SpotifyUser {
@@ -20,21 +19,21 @@ interface SpotifyUser {
 //   scope?: string;
 // }
 
-// interface SpotifyErrorResponse {
-//     error: {
-//       status: number;
-//       message: string;
-//     };
-//   }
+interface SpotifyErrorResponse {
+    error: {
+      status: number;
+      message: string;
+    };
+  }
   
-//   interface CustomError extends Error {
-//     response?: {
-//       status: number;
-//       data?: SpotifyErrorResponse | unknown;
-//     };
-//     status?: number;
-//     statusCode?: number;
-//   }
+  interface CustomError extends Error {
+    response?: {
+      status: number;
+      data?: SpotifyErrorResponse | unknown;
+    };
+    status?: number;
+    statusCode?: number;
+  }
 
 interface UserDataForDB {
   user_id: string;
@@ -67,7 +66,8 @@ interface UserDataForDB {
 //   }
 // }
 
-export default async function handleUserData(userData: SpotifyUser, refresh_token: string, res: NextApiResponse) {
+export default async function handleUserData(userData: SpotifyUser, refresh_token: string)
+: Promise<{ success: boolean; user?: { userId: string }; error?: CustomError }> {
   const userDataForDB: UserDataForDB = {
     user_id: userData.id,
     username: userData.display_name,
@@ -86,18 +86,18 @@ export default async function handleUserData(userData: SpotifyUser, refresh_toke
 
     if (userError) {
       console.error("Supabase error:", userError.message);
-      throw userError;
+      return { success: false, error: userError };
     }
 
     console.log("=== SUCCESS: User inserted into DB ===");
-    return res.status(200).json({
-      message: "successful db insert",
+    return {
+      success: true,
       user: { userId: userDataForDB.user_id }
-    });
+    };
   } catch (dbError) {
     console.log("=== ERROR: Database insertion failed ===");
     console.log("DB Error:", dbError);
-    return res.status(500).json({ error: "Database operation failed" });
+    return { success: false, error: dbError as CustomError };
   }
 }
 

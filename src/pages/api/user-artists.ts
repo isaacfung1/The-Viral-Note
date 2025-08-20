@@ -1,20 +1,24 @@
-import { NextApiRequest, NextApiResponse } from 'next'
 import axios from 'axios';
 import { supabaseServer } from '../../utils/supabaseServer';
 
-interface SpotifyUser {
-    id: string;
-    display_name: string;
-    email?: string;
-    images?: Array<{
-      url: string;
-      height?: number;
-      width?: number;
-    }>;
+interface SpotifyErrorResponse {
+    error: {
+      status: number;
+      message: string;
+    };
+  }
+  
+  interface CustomError extends Error {
+    response?: {
+      status: number;
+      data?: SpotifyErrorResponse | unknown;
+    };
+    status?: number;
+    statusCode?: number;
   }
 
-export default async function getUserArtists(userData: SpotifyUser, access_token: string, req: NextApiRequest, res: NextApiResponse) {
-    const userId = userData.id;
+export default async function getUserArtists(userId: string, access_token: string)
+: Promise<{success: boolean; error?: CustomError}> {
     
     try {
         type RawArtist = {
@@ -116,16 +120,16 @@ export default async function getUserArtists(userData: SpotifyUser, access_token
                 throw artistError || userTopArtistsError;
             }
 
-            res.status(200).json({message: "successful db insert"});
+            return { success: true };
         }
         catch (dbError) {
             console.log("=== ERROR: Database insertion failed ===");
             console.error("DB Error:", dbError);
-            res.status(500).json({dbError: "failed to insert artists into db"});
+            return {success: false, error: dbError as CustomError};
         }
     }
     catch (error) {
         console.error("failed to fetch artists", error);
-        res.status(401).json({error: "unauthorized fetching artists"});
+        return {success: false, error: error as CustomError};
     }
 }
