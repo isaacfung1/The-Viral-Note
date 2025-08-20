@@ -2,8 +2,8 @@ import { NextApiRequest, NextApiResponse } from 'next';
 import querystring from 'querystring';
 import axios from 'axios';
 import { serialize } from 'cookie';
-import { handleUserData } from './get-user'
-import { getUserArtists } from './user-artists';
+import handleUserData from './get-user'
+import getUserArtists from './user-artists';
 
 export default async function spotifyAuth(req: NextApiRequest, res: NextApiResponse) {
     const code = req.query.code || null;

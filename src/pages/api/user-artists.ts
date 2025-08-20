@@ -13,7 +13,7 @@ interface SpotifyUser {
     }>;
   }
 
-export async function getUserArtists(userData: SpotifyUser, access_token: string, req: NextApiRequest, res: NextApiResponse) {
+export default async function getUserArtists(userData: SpotifyUser, access_token: string, req: NextApiRequest, res: NextApiResponse) {
     const userId = userData.id;
     
     try {

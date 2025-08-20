@@ -67,7 +67,7 @@ interface UserDataForDB {
 //   }
 // }
 
-export async function handleUserData(userData: SpotifyUser, refresh_token: string, res: NextApiResponse) {
+export default async function handleUserData(userData: SpotifyUser, refresh_token: string, res: NextApiResponse) {
   const userDataForDB: UserDataForDB = {
     user_id: userData.id,
     username: userData.display_name,
