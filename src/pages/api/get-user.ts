@@ -1,7 +1,4 @@
-import { NextApiRequest, NextApiResponse } from "next";
-import axios from "axios";
-import { parse } from "cookie";
-import { serialize } from "cookie";
+import { NextApiResponse } from "next";
 import { supabaseServer } from "../../utils/supabaseServer";
 
 interface SpotifyUser {
