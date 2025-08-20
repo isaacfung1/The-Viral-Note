@@ -1,24 +1,8 @@
 import axios from 'axios';
 import { supabaseServer } from '../../utils/supabaseServer';
 
-interface SpotifyErrorResponse {
-    error: {
-      status: number;
-      message: string;
-    };
-  }
-  
-  interface CustomError extends Error {
-    response?: {
-      status: number;
-      data?: SpotifyErrorResponse | unknown;
-    };
-    status?: number;
-    statusCode?: number;
-  }
-
 export default async function getUserArtists(userId: string, access_token: string)
-: Promise<{success: boolean; error?: CustomError}> {
+: Promise<{success: boolean; error?: string}> {
     
     try {
         type RawArtist = {
@@ -125,11 +109,11 @@ export default async function getUserArtists(userId: string, access_token: strin
         catch (dbError) {
             console.log("=== ERROR: Database insertion failed ===");
             console.error("DB Error:", dbError);
-            return {success: false, error: dbError as CustomError};
+            return {success: false, error: dbError instanceof Error ? dbError.message : 'Unknown error' };
         }
     }
     catch (error) {
         console.error("failed to fetch artists", error);
-        return {success: false, error: error as CustomError};
+        return {success: false, error: error instanceof Error ? error.message : 'Unknown error'};
     }
 }

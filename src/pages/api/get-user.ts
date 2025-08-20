@@ -19,21 +19,21 @@ interface SpotifyUser {
 //   scope?: string;
 // }
 
-interface SpotifyErrorResponse {
-    error: {
-      status: number;
-      message: string;
-    };
-  }
+// interface SpotifyErrorResponse {
+//     error: {
+//       status: number;
+//       message: string;
+//     };
+//   }
   
-  interface CustomError extends Error {
-    response?: {
-      status: number;
-      data?: SpotifyErrorResponse | unknown;
-    };
-    status?: number;
-    statusCode?: number;
-  }
+//   interface CustomError extends Error {
+//     response?: {
+//       status: number;
+//       data?: SpotifyErrorResponse | unknown;
+//     };
+//     status?: number;
+//     statusCode?: number;
+//   }
 
 interface UserDataForDB {
   user_id: string;
@@ -67,7 +67,7 @@ interface UserDataForDB {
 // }
 
 export default async function handleUserData(userData: SpotifyUser, refresh_token: string)
-: Promise<{ success: boolean; user?: { userId: string }; error?: CustomError }> {
+: Promise<{ success: boolean; user?: { userId: string }; error?: string }> {
   const userDataForDB: UserDataForDB = {
     user_id: userData.id,
     username: userData.display_name,
@@ -86,7 +86,7 @@ export default async function handleUserData(userData: SpotifyUser, refresh_toke
 
     if (userError) {
       console.error("Supabase error:", userError.message);
-      return { success: false, error: userError };
+      return { success: false, error: userError.message };
     }
 
     console.log("=== SUCCESS: User inserted into DB ===");
@@ -96,8 +96,10 @@ export default async function handleUserData(userData: SpotifyUser, refresh_toke
     };
   } catch (dbError) {
     console.log("=== ERROR: Database insertion failed ===");
+    const errorMessage = dbError instanceof Error ? dbError.message : 'Unknown error';
+
     console.log("DB Error:", dbError);
-    return { success: false, error: dbError as CustomError };
+    return { success: false, error: errorMessage };
   }
 }
 

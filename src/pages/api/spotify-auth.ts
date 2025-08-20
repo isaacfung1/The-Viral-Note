@@ -74,8 +74,8 @@ export default async function spotifyAuth(req: NextApiRequest, res: NextApiRespo
                         res.status(500).json({ 
                           error: "Operation failed", 
                           details: {
-                            userError: userResult.error?.message,
-                            artistsError: artistsResult.error?.message
+                            userError: userResult.error,
+                            artistsError: artistsResult.error
                           }
                         });
                       }
