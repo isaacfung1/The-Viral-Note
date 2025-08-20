@@ -12,13 +12,13 @@ interface SpotifyUser {
   }>;
 }
 
-interface SpotifyTokenResponse {
-  access_token: string;
-  token_type: string;
-  expires_in: number;
-  refresh_token?: string;
-  scope?: string;
-}
+// interface SpotifyTokenResponse {
+//   access_token: string;
+//   token_type: string;
+//   expires_in: number;
+//   refresh_token?: string;
+//   scope?: string;
+// }
 
 interface SpotifyErrorResponse {
     error: {
@@ -27,14 +27,14 @@ interface SpotifyErrorResponse {
     };
   }
   
-  interface CustomError extends Error {
-    response?: {
-      status: number;
-      data?: SpotifyErrorResponse | unknown;
-    };
-    status?: number;
-    statusCode?: number;
-  }
+//   interface CustomError extends Error {
+//     response?: {
+//       status: number;
+//       data?: SpotifyErrorResponse | unknown;
+//     };
+//     status?: number;
+//     statusCode?: number;
+//   }
 
 interface UserDataForDB {
   user_id: string;
