@@ -64,7 +64,7 @@ export default async function spotifyAuth(req: NextApiRequest, res: NextApiRespo
                     console.log('=== DEBUG: User data fetched successfully ===');
 
                     await Promise.all([
-                        handleUserData(userData, res),
+                        handleUserData(userData, refresh_token, res),
                         getUserArtists(userData, access_token, req, res)
                     ]);
 
