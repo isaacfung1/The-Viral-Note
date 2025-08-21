@@ -85,7 +85,7 @@ export default async function handleUserData(userData: SpotifyUser, refresh_toke
       .upsert({...userDataForDB, refresh_token}, { onConflict: 'user_id' });
 
     if (userError) {
-      console.error("Supabase error:", userError.message);
+      console.error("Supabase error:", userError);
       return { success: false, error: userError.message };
     }
 
@@ -98,7 +98,10 @@ export default async function handleUserData(userData: SpotifyUser, refresh_toke
     console.log("=== ERROR: Database insertion failed ===");
     const errorMessage = dbError instanceof Error ? dbError.message : 'Unknown error';
 
-    console.log("DB Error:", dbError);
+    console.log("DB Error:", errorMessage);
+    if (dbError instanceof Error && dbError.stack) {
+        console.log("DB Error stack:", dbError.stack);
+      }
     return { success: false, error: errorMessage };
   }
 }
