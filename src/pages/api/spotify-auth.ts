@@ -34,25 +34,34 @@ export default async function spotifyAuth(req: NextApiRequest, res: NextApiRespo
 
             const { access_token, refresh_token, expires_in } = token.data;
             console.log('=== DEBUG: Token received successfully ===');
+            console.log('Access token length:', access_token ? access_token.length : 'null');
+            console.log('Refresh token length:', refresh_token ? refresh_token.length : 'null');
+            console.log('Expires in:', expires_in);
+
+            const cookieOptions = {
+                httpOnly: true,
+                secure: process.env.NODE_ENV === 'production',
+                sameSite: 'lax' as const,
+                path: '/',
+            };
+
+            const accessTokenCookie = serialize('access_token', access_token, {
+                ...cookieOptions,
+                maxAge: expires_in
+            });
+
+            const refreshTokenCookie = serialize('refresh_token', refresh_token, {
+                ...cookieOptions,
+                maxAge: 60 * 60 * 24 * 30 
+            });
+
+            console.log('=== DEBUG: Setting cookies ===');
+            console.log('Access token cookie:', accessTokenCookie);
+            console.log('Refresh token cookie:', refreshTokenCookie);
 
             res.setHeader('Access-Control-Allow-Credentials', 'true');
             res.setHeader('Access-Control-Allow-Origin', 'https://theviralnote.vercel.app');
-            res.setHeader('Set-Cookie', [
-                serialize('access_token', access_token, {
-                    httpOnly: true,
-                    secure: process.env.NODE_ENV === 'production',
-                    sameSite: 'lax',
-                    path: '/',
-                    maxAge: expires_in
-                }),
-                serialize('refresh_token', refresh_token, {
-                    httpOnly: true,
-                    secure: process.env.NODE_ENV === 'production',
-                    sameSite: 'lax',
-                    path: '/',
-                    maxAge: 60 * 60 * 24 * 30
-                })
-            ]);
+            res.setHeader('Set-Cookie', [accessTokenCookie, refreshTokenCookie]);
 
             try {
                 console.log('=== DEBUG: About to call Spotify users API ===');

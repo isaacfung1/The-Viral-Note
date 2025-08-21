@@ -150,17 +150,25 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       console.log("=== DEBUG: GET /api/get-user called ===");
       
       const cookies = req.headers.cookie ? parse(req.headers.cookie) : {};
+      console.log("Parsed cookies:", Object.keys(cookies));
+      console.log("All cookie values:", cookies);
+      
       const access_token = cookies.access_token;
       const refresh_token = cookies.refresh_token;
   
       console.log("Access token exists:", !!access_token);
+      console.log("Access token value (first 20 chars):", access_token ? access_token.substring(0, 20) + '...' : 'null');
       console.log("Refresh token exists:", !!refresh_token);
   
       if (!access_token) {
-        console.log("No access token found");
+        console.log("No access token found in cookies");
         return res.status(401).json({ 
           error: 'No access token found',
-          isAuthenticated: false 
+          isAuthenticated: false,
+          debug: {
+            cookiesFound: Object.keys(cookies),
+            rawCookie: req.headers.cookie
+          }
         });
       }
   

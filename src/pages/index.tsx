@@ -18,7 +18,9 @@ export const getServerSideProps: GetServerSideProps = async (context) => {
     const userResponse = await axios.get(`${baseUrl}/api/get-user`, {
       headers: {
         cookie: cookies,
+        'User-Agent': req.headers['user-agent'] || 'NextJS-Server',
       },
+      timeout: 10000
     });
 
     const isAuthenticated = !!(
