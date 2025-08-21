@@ -108,12 +108,12 @@ export default async function getUserArtists(userId: string, access_token: strin
         }
         catch (dbError) {
             console.log("=== ERROR: Database insertion failed ===");
-            // console.error("DB Error:", dbError);
+            console.error("DB Error:", dbError);
             return {success: false, error: dbError instanceof Error ? dbError.message : 'Unknown error' };
         }
     }
     catch (error) {
-        // console.error("failed to fetch artists", error);
+        console.error("failed to fetch artists", error);
         return {success: false, error: error instanceof Error ? error.message : 'Unknown error'};
     }
 }

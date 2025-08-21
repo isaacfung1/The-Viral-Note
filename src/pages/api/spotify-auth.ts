@@ -63,8 +63,8 @@ export default async function spotifyAuth(req: NextApiRequest, res: NextApiRespo
                     console.log('=== DEBUG: User data fetched successfully ===');
 
                     const [ userResult, artistsResult ] = await Promise.all([
-                        handleUserData(userData.id, refresh_token),
-                        getUserArtists(userData, access_token)
+                        handleUserData(userData, refresh_token),
+                        getUserArtists(userData.id, access_token)
                     ]);
                     
                     if (!userResult.success || !artistsResult.success) {
@@ -74,16 +74,11 @@ export default async function spotifyAuth(req: NextApiRequest, res: NextApiRespo
                         res.status(500).json({ 
                           error: "Operation failed", 
                           details: {
-                            userError: userResult.error,
-                            artistsError: artistsResult.error
+                            userError: userResult?.error,
+                            artistsError: artistsResult?.error
                           }
                         });
                       }
-                    
-                      res.status(200).json({
-                        message: "successful",
-                        user: userResult.user,
-                      });
 
                     return res.redirect('/home');
                 }
