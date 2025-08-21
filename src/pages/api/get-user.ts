@@ -68,6 +68,19 @@ interface UserDataForDB {
 
 export default async function handleUserData(userData: SpotifyUser, refresh_token: string)
 : Promise<{ success: boolean; user?: { userId: string }; error?: string }> {
+  
+  console.log("=== DEBUG: Raw userData received ===");
+  console.log("userData keys:", userData ? Object.keys(userData) : 'userData is null/undefined');
+  console.log("userData:", JSON.stringify(userData, null, 2));
+  
+  if (!userData || !userData.id || !userData.display_name) {
+    console.error("=== ERROR: Invalid userData received ===");
+    return { 
+      success: false, 
+      error: "Invalid user data received from Spotify API" 
+    };
+  }
+
   const userDataForDB: UserDataForDB = {
     user_id: userData.id,
     username: userData.display_name,
@@ -96,12 +109,31 @@ export default async function handleUserData(userData: SpotifyUser, refresh_toke
     };
   } catch (dbError) {
     console.log("=== ERROR: Database insertion failed ===");
-    const errorMessage = dbError instanceof Error ? dbError.message : 'Unknown error';
+    
 
-    console.log("DB Error:", errorMessage);
-    if (dbError instanceof Error && dbError.stack) {
-        console.log("DB Error stack:", dbError.stack);
+    let errorMessage = 'Unknown database error';
+    let errorDetails = '';
+    
+    if (dbError instanceof Error) {
+      errorMessage = dbError.message;
+      errorDetails = dbError.name;
+    } 
+    else if (typeof dbError === 'string') {
+      errorMessage = dbError;
+    } 
+    else if (dbError && typeof dbError === 'object') {
+
+      if ('message' in dbError) {
+        errorMessage = String(dbError.message);
       }
+      if ('code' in dbError) {
+        errorDetails += ` Code: ${dbError.code}`;
+      }
+    }
+    
+    console.log("DB Error message:", errorMessage);
+    console.log("DB Error details:", errorDetails);
+    
     return { success: false, error: errorMessage };
   }
 }
