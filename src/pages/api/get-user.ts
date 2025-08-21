@@ -1,3 +1,6 @@
+import { NextApiRequest, NextApiResponse } from 'next';
+import { parse } from 'cookie';
+import axios, { AxiosError } from 'axios';
 import { supabaseServer } from "../../utils/supabaseServer";
 
 interface SpotifyUser {
@@ -66,7 +69,7 @@ interface UserDataForDB {
 //   }
 // }
 
-export default async function handleUserData(userData: SpotifyUser, refresh_token: string)
+async function handleUserData(userData: SpotifyUser, refresh_token: string)
 : Promise<{ success: boolean; user?: { userId: string }; error?: string }> {
   
   console.log("=== DEBUG: Raw userData received ===");
@@ -137,6 +140,86 @@ export default async function handleUserData(userData: SpotifyUser, refresh_toke
     return { success: false, error: errorMessage };
   }
 }
+
+export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+    if (req.method !== 'GET') {
+      return res.status(405).json({ error: 'Method not allowed' });
+    }
+  
+    try {
+      console.log("=== DEBUG: GET /api/get-user called ===");
+      
+      const cookies = req.headers.cookie ? parse(req.headers.cookie) : {};
+      const access_token = cookies.access_token;
+      const refresh_token = cookies.refresh_token;
+  
+      console.log("Access token exists:", !!access_token);
+      console.log("Refresh token exists:", !!refresh_token);
+  
+      if (!access_token) {
+        console.log("No access token found");
+        return res.status(401).json({ 
+          error: 'No access token found',
+          isAuthenticated: false 
+        });
+      }
+  
+      const spotifyUserResponse = await axios.get("https://api.spotify.com/v1/me", {
+        headers: {
+          "Authorization": `Bearer ${access_token}`
+        }
+      });
+  
+      const userData = spotifyUserResponse.data;
+      console.log("=== DEBUG: Spotify user data fetched ===");
+      console.log("User ID:", userData.id);
+      console.log("Display name:", userData.display_name);
+  
+      if (refresh_token) {
+        const result = await handleUserData(userData, refresh_token);
+        if (!result.success) {
+          console.error("Failed to handle user data:", result.error);
+        }
+      }
+  
+      // Return user data
+      return res.status(200).json({
+        user: {
+          userId: userData.id,
+          username: userData.display_name,
+          email: userData.email,
+          image: userData.images?.[0]?.url || null
+        },
+        isAuthenticated: true
+      });
+  
+    } catch (error: unknown) {
+      console.log("=== ERROR: Failed to get user data ===");
+      
+      if (error instanceof AxiosError) {
+        console.log("Axios error:", error.message);
+        
+        if (error.response?.status === 401) {
+          // Token expired or invalid
+          console.log("Token expired or invalid");
+          return res.status(401).json({ 
+            error: 'Token expired',
+            isAuthenticated: false 
+          });
+        }
+      } else if (error instanceof Error) {
+        console.log("Generic error:", error.message);
+      }
+  
+      return res.status(500).json({ 
+        error: 'Failed to fetch user data',
+        isAuthenticated: false 
+      });
+    }
+  }
+  
+
+  export { handleUserData };
 
 // async function handleTokenError(error: CustomError, req: NextApiRequest, res: NextApiResponse) {
 //   if (error.response?.status === 401) {

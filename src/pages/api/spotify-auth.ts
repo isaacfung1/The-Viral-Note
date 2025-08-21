@@ -2,7 +2,7 @@ import { NextApiRequest, NextApiResponse } from 'next';
 import querystring from 'querystring';
 import axios from 'axios';
 import { serialize } from 'cookie';
-import handleUserData from './get-user'
+import { handleUserData } from './get-user'
 import getUserArtists from './user-artists';
 import { AxiosError } from 'axios';
 
