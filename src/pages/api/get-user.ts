@@ -190,7 +190,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         }
       }
   
-      // Return user data
       return res.status(200).json({
         user: {
           userId: userData.id,

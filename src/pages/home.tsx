@@ -4,42 +4,97 @@ import { GetServerSideProps } from "next";
 import axios from "axios";
 import { useRouter } from "next/router";
 import Image from "next/image";
+import { parse } from 'cookie';
 
 interface HomeProps {
   isAuthenticated: boolean;
 }
 
 export const getServerSideProps: GetServerSideProps = async (context) => {
-  try {
-    const { req } = context;
-    const cookies = req.headers.cookie || "";
+    try {
+      const { req } = context;
+      
+      console.log("=== DEBUG: getServerSideProps called ===");
+      console.log("Request URL:", req.url);
+      console.log("Raw cookies:", req.headers.cookie);
+  
+      const cookies = req.headers.cookie ? parse(req.headers.cookie) : {};
+      
+    if (!cookies) {
+        console.log("No cookies found, user not authenticated");
+        return {
+          props: {
+            isAuthenticated: false
+          },
+        };
+      }
 
-    const baseUrl = 'https://theviralnote.vercel.app';
-
-    const userResponse = await axios.get(`${baseUrl}/api/get-user`, {
-      headers: {
-        cookie: cookies,
-      },
-    });
-
-    const isAuthenticated = !!(
-      userResponse.data.user && userResponse.data.user.userId
-    );
-
-    return {
-      props: {
-        isAuthenticated
-      },
-    };
-  } catch (error) {
-    console.error("Error checking user authentication:", error);
-    return {
-      props: {
-        isAuthenticated: false
-      },
-    };
-  }
-};
+      const access_token = cookies.access_token;
+      const refresh_token = cookies.refresh_token;
+  
+      console.log("Access token exists:", !!access_token);
+      console.log("Refresh token exists:", !!refresh_token);
+  
+      if (!access_token) {
+        console.log("No access token found, user not authenticated");
+        return {
+          props: {
+            isAuthenticated: false
+          },
+        };
+      }
+  
+      try {
+        console.log("Validating access token with Spotify API...");
+        
+        const spotifyResponse = await axios.get("https://api.spotify.com/v1/me", {
+          headers: {
+            "Authorization": `Bearer ${access_token}`
+          },
+          timeout: 5000
+        });
+  
+        console.log("Spotify API response status:", spotifyResponse.status);
+        console.log("User ID from Spotify:", spotifyResponse.data.id);
+  
+        return {
+          props: {
+            isAuthenticated: true,
+            user: {
+              userId: spotifyResponse.data.id,
+              username: spotifyResponse.data.display_name,
+              email: spotifyResponse.data.email,
+              image: spotifyResponse.data.images?.[0]?.url || null
+            }
+          },
+        };
+  
+      } catch (spotifyError: any) {
+        console.error("Spotify API validation failed:", spotifyError.response?.status, spotifyError.message);
+        
+        if (spotifyError.response?.status === 401 && refresh_token) {
+          console.log("Access token expired, using refresh token - user needs to re-authenticate");
+        }
+  
+        return {
+          props: {
+            isAuthenticated: false
+          },
+        };
+      }
+  
+    } catch (error: any) {
+      console.error("=== ERROR: getServerSideProps failed ===");
+      console.error("Error message:", error.message);
+      console.error("Error stack:", error.stack);
+      
+      return {
+        props: {
+          isAuthenticated: false
+        },
+      };
+    }
+  };
 
 export default function Home({ isAuthenticated }: HomeProps) {
   const router = useRouter();

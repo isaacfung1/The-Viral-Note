@@ -13,6 +13,15 @@ export const getServerSideProps: GetServerSideProps = async (context) => {
     const { req } = context;
     const cookies = req.headers.cookie || "";
 
+    if (!cookies) {
+      console.log("No cookies found, user not authenticated");
+      return {
+        props: {
+          isAuthenticated: false
+        },
+      };
+    }
+
     const baseUrl = 'https://theviralnote.vercel.app';
 
     const userResponse = await axios.get(`${baseUrl}/api/get-user`, {

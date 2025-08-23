@@ -74,17 +74,17 @@ export default async function getUserArtists(userId: string, access_token: strin
 
         try {
             const artistsRows = uniqueArtists.map(artist => ({
-                artistId: artist.id,
-                artistName: artist.name,
-                artistImageUrl: artist.imageUrl,
-                artistGenres: artist.genres,
-                artistPopularity: artist.popularity,
-                timeRange: artist.timeRange
+                artist_id: artist.id,
+                artist_name: artist.name,
+                image_url: artist.imageUrl,
+                artist_genres: artist.genres,
+                artist_popularity: artist.popularity,
+                time_range: artist.timeRange
             }));
 
             const userTopArtistsRows = artistsRows.map(artist => ({
-                userId: userId,
-                artistId: artist.artistId
+                user_id: userId,
+                artist_id: artist.artist_id
 
             }));
 
