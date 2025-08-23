@@ -2,6 +2,7 @@ import GamemodeButton from "@/components/gamemode-button";
 import React from "react";
 import { GetServerSideProps } from "next";
 import axios from "axios";
+import { AxiosError } from "axios";
 import { useRouter } from "next/router";
 import Image from "next/image";
 import { parse } from 'cookie';
@@ -69,17 +70,19 @@ export const getServerSideProps: GetServerSideProps = async (context) => {
           },
         };
   
-      } catch (spotifyError: any) {
-        console.error("Spotify API validation failed:", spotifyError.response?.status, spotifyError.message);
-        
-        if (spotifyError.response?.status === 401 && refresh_token) {
-          console.log("Access token expired, using refresh token - user needs to re-authenticate");
+      } catch (spotifyError : unknown) {
+        if (spotifyError instanceof AxiosError) {
+            console.error("Spotify API validation failed:", spotifyError.message);
+
+            if (spotifyError.response?.status === 401 && refresh_token) {
+            console.log("Access token expired, using refresh token - user needs to re-authenticate");
+            }
         }
-  
+    
         return {
-          props: {
+        props: {
             isAuthenticated: false
-          },
+        },
         };
       }
   
