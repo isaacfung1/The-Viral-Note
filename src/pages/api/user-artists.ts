@@ -91,11 +91,11 @@ export default async function getUserArtists(userId: string, access_token: strin
             const [{error: artistError}, {error: userTopArtistsError}] = await Promise.all([
                 supabaseServer
                 .from('artists')
-                .upsert(artistsRows, { onConflict: 'artistId'}),
+                .upsert(artistsRows, { onConflict: 'artist_id'}),
 
                 supabaseServer
                 .from('user_top_artists')
-                .upsert(userTopArtistsRows, {onConflict: 'userId, artistId', ignoreDuplicates: true})
+                .upsert(userTopArtistsRows, {onConflict: 'user_id, artist_id', ignoreDuplicates: true})
 
             ]);
 

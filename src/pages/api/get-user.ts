@@ -207,7 +207,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         console.log("Axios error:", error.message);
         
         if (error.response?.status === 401) {
-          // Token expired or invalid
           console.log("Token expired or invalid");
           return res.status(401).json({ 
             error: 'Token expired',
