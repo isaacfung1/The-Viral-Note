@@ -137,7 +137,7 @@ export default async function spotifyAuth(req: NextApiRequest, res: NextApiRespo
                     console.log('Error value:', String(userError));
                 }
                 
-                return res.redirect('/home?error=userDataFailed');
+                return res.redirect('/?error=userDataFailed');
             }
         }
         catch (error: unknown) {
