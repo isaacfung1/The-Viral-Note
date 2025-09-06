@@ -97,7 +97,7 @@ async function handleUserData(userData: SpotifyUser, refresh_token: string)
 
   try {
     const { error: userError } = await supabaseServer
-      .from('users')
+      .from('public.users')
       .upsert({...userDataForDB, refresh_token}, { onConflict: 'user_id' });
 
     if (userError) {
